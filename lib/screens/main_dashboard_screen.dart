@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sigma_flutter_ui/screens/login_screen.dart';
 import 'package:sigma_flutter_ui/screens/settings_screen.dart';
+import 'package:sigma_flutter_ui/screens/tracking_screen.dart';
+import 'package:sigma_flutter_ui/services/python_service.dart';
 
 // Figma Node ID: 1-523 (메인 페이지 - 얼굴 인증 성공 후)
 class MainDashboardScreen extends StatelessWidget {
@@ -186,14 +188,31 @@ class MainDashboardScreen extends StatelessWidget {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: 트레킹 화면으로 이동
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('트레킹 기능은 곧 구현됩니다'),
-                                backgroundColor: Color(0xFF6186FF),
-                              ),
-                            );
+                          onPressed: () async {
+                            // Start hand tracking with Python overlay
+                            final success = await PythonService.startHandTracking();
+                            
+                            if (success) {
+                              // Navigate to tracking screen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TrackingScreen()),
+                              );
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('손 트래킹이 시작되었습니다'),
+                                  backgroundColor: Color(0xFF6186FF),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('손 트래킹 시작에 실패했습니다'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0D0D11),

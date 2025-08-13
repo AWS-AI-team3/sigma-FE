@@ -1,0 +1,12 @@
+[project]
+name = "sigma-fe"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mediapipe==0.10.9",
+    "opencv-python-headless>=4.11.0.86",
+    "pyautogui>=0.9.54",
+    "pyqt6>=6.9.1",
+]
