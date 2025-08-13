@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sigma_flutter_ui/screens/main_dashboard_screen.dart';
+import 'package:camera/camera.dart';
+import 'dart:typed_data';
 
 class FaceRegistrationScreen extends StatefulWidget {
   const FaceRegistrationScreen({super.key});
@@ -11,6 +13,59 @@ class FaceRegistrationScreen extends StatefulWidget {
 
 class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   bool _isPhotoCaptured = false;
+  CameraController? _controller;
+  Future<void>? _initializeControllerFuture;
+  bool _isCameraInitialized = false;
+  Uint8List? _capturedImageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isNotEmpty) {
+        // 전면 카메라 찾기 (얼굴 인증용)
+        CameraDescription? frontCamera;
+        for (final camera in cameras) {
+          if (camera.lensDirection == CameraLensDirection.front) {
+            frontCamera = camera;
+            break;
+          }
+        }
+        
+        // 전면 카메라가 없으면 첫 번째 카메라 사용
+        final selectedCamera = frontCamera ?? cameras.first;
+        
+        _controller = CameraController(
+          selectedCamera,
+          ResolutionPreset.medium,
+        );
+        
+        _initializeControllerFuture = _controller!.initialize();
+        await _initializeControllerFuture;
+        
+        if (mounted) {
+          setState(() {
+            _isCameraInitialized = true;
+          });
+          print('카메라 비율: ${_controller!.value.aspectRatio}');
+          print('카메라 해상도: ${_controller!.value.previewSize}');
+        }
+      }
+    } catch (e) {
+      print('카메라 초기화 오류: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +211,9 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
 
   Widget _buildCameraArea() {
     return Container(
-      width: 350,
-      height: 350,
+      width: 400, // 최대 너비 제한
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -179,8 +233,8 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
       ),
       child: Container(
         margin: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
           color: Colors.white,
         ),
         child: _buildCameraPlaceholder(),
@@ -189,30 +243,91 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   }
 
   Widget _buildCameraPlaceholder() {
-    return Container(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFFF1F5F9),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-              strokeWidth: 3.0,
+    // 촬영된 이미지가 있으면 그것을 표시
+    if (_isPhotoCaptured && _capturedImageBytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()..scale(-1.0, 1.0), // 좌우 반전
+          child: AspectRatio(
+            aspectRatio: _controller?.value.aspectRatio ?? (4/3),
+            child: Image.memory(
+              _capturedImageBytes!,
+              fit: BoxFit.cover,
             ),
-            SizedBox(height: 20),
-            Text(
-              '얼굴을 화면에 맞춰주세요',
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF6B7280),
+          ),
+        ),
+      );
+    }
+
+    if (!_isCameraInitialized || _controller == null) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFFF1F5F9),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                strokeWidth: 3.0,
+              ),
+              SizedBox(height: 20),
+              Text(
+                '카메라를 초기화하는 중...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return FutureBuilder<void>(
+      future: _initializeControllerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: _controller!.value.aspectRatio,
+              child: CameraPreview(_controller!),
+            ),
+          );
+        } else {
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFF1F5F9),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                    strokeWidth: 3.0,
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    '얼굴을 화면에 맞춰주세요',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+      },
     );
   }
 
@@ -334,19 +449,45 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     );
   }
 
-  void _handleTakePhoto() {
-    setState(() {
-      _isPhotoCaptured = true;
-    });
+  void _handleTakePhoto() async {
+    try {
+      if (_controller != null && _isCameraInitialized) {
+        final image = await _controller!.takePicture();
+        final imageBytes = await image.readAsBytes();
+        
+        setState(() {
+          _capturedImageBytes = imageBytes;
+          _isPhotoCaptured = true;
+        });
+        
+        print('이미지 촬영 완료 - 메모리에 저장됨 (${imageBytes.length} bytes)');
+      }
+    } catch (e) {
+      print('사진 촬영 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사진 촬영에 실패했습니다.')),
+        );
+      }
+    }
   }
 
   void _handleAuthenticate() {
-    _showAuthenticationSuccessDialog(context);
+    if (_capturedImageBytes != null) {
+      print('인증용 이미지 준비됨 - 서버 인증 예정 (${_capturedImageBytes!.length} bytes)');
+      // TODO: 여기에 서버 얼굴 인증 로직 추가
+      _showAuthenticationSuccessDialog(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 사진을 촬영해주세요.')),
+      );
+    }
   }
 
   void _handleRetake() {
     setState(() {
       _isPhotoCaptured = false;
+      _capturedImageBytes = null; // 메모리에서 이미지 제거
     });
   }
 
