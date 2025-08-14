@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sigma_flutter_ui/services/python_service.dart';
 import 'dart:typed_data';
+import 'dart:async';
 
 // Figma Node ID: 99-145 (트래킹 페이지)
 class TrackingScreen extends StatefulWidget {
@@ -13,9 +14,19 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   bool _isCameraEnabled = true; // 기본적으로 카메라가 켜진 상태
+  bool _isMicEnabled = false; // 기본적으로 마이크가 꺼진 상태
+  StreamSubscription<String>? _gestureSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _startGestureListening();
+  }
 
   @override
   void dispose() {
+    // Stop gesture subscription
+    _gestureSubscription?.cancel();
     // Stop Python processes when leaving the tracking screen
     PythonService.stopHandTracking();
     super.dispose();
@@ -25,14 +36,39 @@ class _TrackingScreenState extends State<TrackingScreen> {
     setState(() {
       _isCameraEnabled = !_isCameraEnabled;
     });
+  }
+
+  void _toggleMic() {
+    setState(() {
+      _isMicEnabled = !_isMicEnabled;
+    });
     
-    if (!_isCameraEnabled) {
-      // 카메라 끄기 - Python에서 카메라 스트림 중지
-      PythonService.stopCameraStream();
+    // 마이크 제어 로직 구현 필요
+    if (_isMicEnabled) {
+      // 녹음 시작
     } else {
-      // 카메라 켜기 - Python에서 카메라 스트림 재시작
-      PythonService.startCameraStream();
+      // 녹음 중지
     }
+  }
+
+  void _startGestureListening() {
+    _gestureSubscription = PythonService.gestureStream.listen((gesture) {
+      if (gesture == 'fist') {
+        // 주먹을 쥐었을 때 - 녹음 시작
+        if (!_isMicEnabled) {
+          setState(() {
+            _isMicEnabled = true;
+          });
+        }
+      } else if (gesture == 'open_hand') {
+        // 손을 폈을 때 - 녹음 중지
+        if (_isMicEnabled) {
+          setState(() {
+            _isMicEnabled = false;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -181,16 +217,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                       ),
                                     ),
                                     // 마이크 아이콘
-                                    Container(
-                                      width: 39,
-                                      height: 39,
-                                      decoration: BoxDecoration(
-                                        boxShadow: [],
-                                      ),
-                                      child: const Icon(
-                                        Icons.mic,
-                                        size: 32,
-                                        color: Colors.black,
+                                    GestureDetector(
+                                      onTap: _toggleMic,
+                                      child: Container(
+                                        width: 39,
+                                        height: 39,
+                                        decoration: BoxDecoration(
+                                          boxShadow: [],
+                                        ),
+                                        child: Icon(
+                                          Icons.mic,
+                                          size: 32,
+                                          color: _isMicEnabled ? Colors.red : Colors.black,
+                                        ),
                                       ),
                                     ),
                                     // 닫기 아이콘
@@ -378,33 +417,100 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         child: Row(
                           children: [
                             // 마이크 아이콘
-                            Container(
-                              margin: const EdgeInsets.only(left: 20, top: 15, bottom: 15),
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.mic,
-                                size: 50,
-                                color: Colors.red,
+                            GestureDetector(
+                              onTap: _toggleMic,
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 5, top: 15, bottom: 15),
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.mic,
+                                  size: 32,
+                                  color: _isMicEnabled ? Colors.red : Colors.black,
+                                ),
                               ),
                             ),
                             // 안내 텍스트
                             Expanded(
                               child: Container(
-                                margin: const EdgeInsets.only(left: 15, right: 15),
+                                margin: const EdgeInsets.only(left: 0, right: 10),
                                 child: Text(
                                   '방금 복사한 사진을 쳇 지피티한테 보내고 위 사진에 나와있는 에러를 어떻게 해결 하는지 물어봐줘.',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 16,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w400,
                                     color: Colors.black,
                                     height: 1.2,
                                   ),
                                 ),
+                              ),
+                            ),
+                            // 버튼들 (세로로 배치)
+                            Container(
+                              margin: const EdgeInsets.only(right: 15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // 보내기 버튼
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        // 보내기 기능 구현
+                                      },
+                                      icon: const Icon(
+                                        Icons.send,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        '보내기',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF9E9E9E),
+                                        minimumSize: const Size(70, 32),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // 취소하기 버튼
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      // 취소하기 기능 구현
+                                    },
+                                    icon: const Icon(
+                                      Icons.cancel,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      '취소하기',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF9E9E9E),
+                                      minimumSize: const Size(70, 32),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],

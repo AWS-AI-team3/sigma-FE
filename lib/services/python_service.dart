@@ -8,6 +8,7 @@ class PythonService {
   static bool _isTracking = false;
   static int? _pythonProcessId;
   static final StreamController<Uint8List> _cameraStreamController = StreamController<Uint8List>.broadcast();
+  static final StreamController<String> _gestureStreamController = StreamController<String>.broadcast();
 
   /// Start hand tracking using Python overlay
   static Future<bool> startHandTracking() async {
@@ -41,7 +42,7 @@ class PythonService {
         _pythonProcessId = _handTrackingProcess!.pid;
         print('Hand tracking started successfully (PID: $_pythonProcessId)');
         
-        // Listen to process output and parse camera frames
+        // Listen to process output and parse camera frames and gestures
         _handTrackingProcess!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
           try {
             final jsonData = json.decode(line);
@@ -49,6 +50,9 @@ class PythonService {
               // Decode base64 image data
               final imageData = base64.decode(jsonData['data']);
               _cameraStreamController.add(imageData);
+            } else if (jsonData['type'] == 'gesture') {
+              // Send gesture data to gesture stream
+              _gestureStreamController.add(jsonData['gesture_type']);
             }
           } catch (e) {
             // If not JSON, treat as regular output
@@ -119,9 +123,12 @@ class PythonService {
       }
     }
     
-    // Close the stream controller
+    // Close the stream controllers
     if (!_cameraStreamController.isClosed) {
       await _cameraStreamController.close();
+    }
+    if (!_gestureStreamController.isClosed) {
+      await _gestureStreamController.close();
     }
     
     print('Python service cleanup completed');
@@ -133,27 +140,9 @@ class PythonService {
   /// Get camera stream from MediaPipe
   static Stream<Uint8List> get cameraStream => _cameraStreamController.stream;
   
-  /// Start camera stream (send signal to Python)
-  static Future<void> startCameraStream() async {
-    try {
-      final commandFile = File('python/camera_command.txt');
-      await commandFile.writeAsString('START_CAMERA');
-      print('Camera stream start signal sent');
-    } catch (e) {
-      print('Error sending camera start signal: $e');
-    }
-  }
+  /// Get gesture stream from MediaPipe
+  static Stream<String> get gestureStream => _gestureStreamController.stream;
   
-  /// Stop camera stream (send signal to Python)
-  static Future<void> stopCameraStream() async {
-    try {
-      final commandFile = File('python/camera_command.txt');
-      await commandFile.writeAsString('STOP_CAMERA');
-      print('Camera stream stop signal sent');
-    } catch (e) {
-      print('Error sending camera stop signal: $e');
-    }
-  }
 
   /// Start the main PyQt application
   static Future<bool> startPyQtApp() async {

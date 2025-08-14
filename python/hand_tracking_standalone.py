@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 """
 Standalone hand tracking script for Flutter integration
-Starts the SimpleHandOverlay directly when called from Flutter
 """
 
 import sys
 import os
+import signal
 
 # Add the current directory to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 try:
-    import os
-    # Set environment variables to help with DLL loading
+    # Set environment variables
     os.environ['OMP_NUM_THREADS'] = '1'
     
     from PyQt6.QtWidgets import QApplication
-    import signal
-    
-    # Import from current directory instead of src module
-    from simple_overlay import SimpleHandOverlay
+    from hand_overlay import HandOverlay
     
     def signal_handler(sig, frame):
         """Handle Ctrl+C gracefully"""
@@ -28,24 +24,26 @@ try:
         app.quit()
     
     def main():
+        global app
+        
         # Setup signal handler for graceful shutdown
         signal.signal(signal.SIGINT, signal_handler)
         
         # Create Qt application
         app = QApplication(sys.argv)
         
-        # Create and start hand overlay
-        overlay = SimpleHandOverlay()
-        overlay.start_tracking()
+        # Create hand overlay
+        overlay = HandOverlay()
+        overlay.show()
         
-        print("Hand tracking overlay started. Press Ctrl+C to stop.")
+        print("Hand tracking started. Press Ctrl+C to stop.")
         
         # Run the application
         try:
             sys.exit(app.exec())
         except KeyboardInterrupt:
             print("\nShutting down...")
-            overlay.stop_tracking()
+            overlay.close()
     
     if __name__ == "__main__":
         main()
