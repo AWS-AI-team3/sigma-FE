@@ -5,6 +5,7 @@ Simple gesture detection using MediaPipe
 import cv2
 import mediapipe as mp
 import numpy as np
+import sys
 from typing import Optional, Dict
 
 class GestureDetector:
@@ -18,7 +19,19 @@ class GestureDetector:
         )
         
         # Thresholds
-        self.pinch_threshold = 0.05
+        self.pinch_threshold = 0.03
+        self.scroll_threshold = 0.04  # Larger threshold for scroll
+        
+        # Scroll state tracking
+        self.is_scrolling = False
+        self.scroll_start_pos = None
+        
+        # Recording state tracking
+        self.is_recording = False
+        
+        # Click state tracking
+        self.is_left_clicking = False
+        self.is_right_clicking = False
         
     def process_frame(self, frame):
         """Process frame and detect gestures"""
@@ -74,34 +87,132 @@ class GestureDetector:
         index_tip = positions[INDEX_TIP]
         middle_tip = positions[MIDDLE_TIP]
         
-        # Calculate distances
-        thumb_index_distance = np.sqrt(np.sum((thumb_tip - index_tip) ** 2))
-        thumb_middle_distance = np.sqrt(np.sum((thumb_tip - middle_tip) ** 2))
-        
-        # Check for pinch gestures
-        if thumb_index_distance < self.pinch_threshold:
-            return "left_click"
-        if thumb_middle_distance < self.pinch_threshold:
-            return "right_click"
-        
-        # Count extended fingers
+        # Count extended fingers first
         fingers_up = 0
         finger_tips = [THUMB_TIP, INDEX_TIP, MIDDLE_TIP, RING_TIP, PINKY_TIP]
         finger_pips = [THUMB_IP, INDEX_PIP, MIDDLE_PIP, RING_PIP, PINKY_PIP]
         
         for i in range(5):
-            tip_y = float(positions[finger_tips[i]][1])
-            pip_y = float(positions[finger_pips[i]][1])
-            if tip_y < pip_y:
-                fingers_up += 1
+            if i == 0:  # Thumb - different logic
+                # For thumb, check if tip is to the right/left of IP (depending on hand)
+                tip_x = float(positions[finger_tips[i]][0])
+                pip_x = float(positions[finger_pips[i]][0])
+                if abs(tip_x - pip_x) > 0.04:  # Thumb extended
+                    fingers_up += 1
+            else:  # Other fingers - check Y position
+                tip_y = float(positions[finger_tips[i]][1])
+                pip_y = float(positions[finger_pips[i]][1])
+                if tip_y < pip_y:  # Finger tip above PIP
+                    fingers_up += 1
         
-        # Gesture classification
-        if fingers_up <= 1:
-            return "fist"
-        elif fingers_up >= 4:
-            return "open_hand"
+        # Check for thumb-ring pinch gesture (for recording) - but don't return yet
+        ring_tip = positions[RING_TIP]
+        thumb_ring_distance = np.sqrt(np.sum((thumb_tip - ring_tip) ** 2))
+        
+        # Use same threshold as left/right click
+        is_recording_gesture = thumb_ring_distance < self.pinch_threshold
+        
+        # Debug: print distance when close
+        if thumb_ring_distance < 0.1:
+            print(f"[DEBUG] Thumb-ring distance: {thumb_ring_distance:.3f}, threshold: {self.pinch_threshold:.3f}", file=sys.stderr)
+        
+        # Handle recording state but continue processing other gestures
+        recording_gesture = None
+        if is_recording_gesture:
+            # Reset scroll state when making thumb-ring pinch
+            if self.is_scrolling:
+                self.is_scrolling = False
+                self.scroll_start_pos = None
+            
+            if not self.is_recording:
+                # First time making thumb-ring pinch - start recording
+                self.is_recording = True
+                recording_gesture = "recording_start"
+            else:
+                # Continue holding thumb-ring pinch - keep recording
+                recording_gesture = "recording_hold"
         else:
-            return "cursor"
+            # Not making thumb-ring pinch
+            if self.is_recording:
+                # Just stopped thumb-ring pinch - stop recording
+                self.is_recording = False
+                recording_gesture = "recording_stop"
+        
+        # Calculate distances for gesture detection
+        thumb_index_distance = np.sqrt(np.sum((thumb_tip - index_tip) ** 2))
+        thumb_middle_distance = np.sqrt(np.sum((thumb_tip - middle_tip) ** 2))
+        
+        # Check for 3-finger scroll (when 2-3 fingers are up and close together)
+        if (thumb_index_distance < self.scroll_threshold and 
+            thumb_middle_distance < self.scroll_threshold):
+            return self._handle_scroll(positions)
+        
+        # Reset scroll state if not in triple pinch
+        if self.is_scrolling:
+            self.is_scrolling = False
+            self.scroll_start_pos = None
+        
+        # Return recording gesture first if active (highest priority)
+        if recording_gesture:
+            return recording_gesture
+        
+        # Check for individual pinch gestures with hold state
+        if thumb_index_distance < self.pinch_threshold:
+            if not self.is_left_clicking:
+                self.is_left_clicking = True
+                return "left_click_start"
+            else:
+                return "left_click_hold"
+        else:
+            if self.is_left_clicking:
+                self.is_left_clicking = False
+                return "left_click_end"
+        
+        if thumb_middle_distance < self.pinch_threshold:
+            if not self.is_right_clicking:
+                self.is_right_clicking = True
+                return "right_click_start"
+            else:
+                return "right_click_hold"
+        else:
+            if self.is_right_clicking:
+                self.is_right_clicking = False
+                return "right_click_end"
+        
+        # Default cursor control
+        return "cursor"
+    
+    def _handle_scroll(self, positions):
+        """Handle 3-finger scroll gesture based on Y-axis movement"""
+        THUMB_TIP = 4
+        INDEX_TIP = 8
+        MIDDLE_TIP = 12
+        
+        # Get current triple pinch center position (average of 3 fingertips)
+        thumb_pos = positions[THUMB_TIP]
+        index_pos = positions[INDEX_TIP]
+        middle_pos = positions[MIDDLE_TIP]
+        current_pinch_pos = (thumb_pos + index_pos + middle_pos) / 3
+        
+        if not self.is_scrolling:
+            # First time detecting triple pinch - initialize scroll tracking
+            self.scroll_start_pos = current_pinch_pos
+            self.is_scrolling = True
+            return "scroll_start"
+        else:
+            # Calculate Y-axis movement from initial pinch position
+            y_displacement = current_pinch_pos[1] - self.scroll_start_pos[1]
+            
+            # Calculate scroll speed based on Y displacement
+            # Negative y_displacement = moved up = scroll up
+            # Positive y_displacement = moved down = scroll down
+            scroll_speed = y_displacement * 30
+            
+            # Apply minimum threshold to avoid micro-scrolls
+            if abs(scroll_speed) > 0.4:
+                return f"scroll:{scroll_speed}"
+            else:
+                return "scroll_hold"
     
     def cleanup(self):
         """Clean up resources"""

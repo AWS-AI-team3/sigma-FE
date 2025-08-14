@@ -11,8 +11,9 @@ class CursorController:
         self.last_click_time = 0
         self.click_cooldown = 0.3  # Prevent multiple clicks
         
-        # Disable pyautogui failsafe
+        # Disable pyautogui failsafe and pause
         pyautogui.FAILSAFE = False
+        pyautogui.PAUSE = 0
         
     def update_cursor(self, thumb_pos):
         """Update cursor position based on thumb position"""
@@ -26,21 +27,49 @@ class CursorController:
         try:
             current_time = time.time()
             
-            # Check cooldown
-            if current_time - self.last_click_time < self.click_cooldown:
-                return
-            
-            if gesture == "left_click":
-                pyautogui.click()
+            # Handle new click hold states
+            if gesture == "left_click_start":
+                pyautogui.mouseDown()
                 self.last_click_time = current_time
-                
-            elif gesture == "right_click":
-                pyautogui.rightClick()
-                self.last_click_time = current_time
-                
-            elif gesture == "scroll":
-                # For now, just skip - scroll implementation can be added later
+            elif gesture == "left_click_hold":
+                # Continue holding - no action needed
                 pass
+            elif gesture == "left_click_end":
+                pyautogui.mouseUp()
+                self.last_click_time = current_time
+                
+            elif gesture == "right_click_start":
+                pyautogui.mouseDown(button='right')
+                self.last_click_time = current_time
+            elif gesture == "right_click_hold":
+                # Continue holding - no action needed
+                pass
+            elif gesture == "right_click_end":
+                pyautogui.mouseUp(button='right')
+                self.last_click_time = current_time
+                
+            # Legacy gesture support (fallback)
+            elif gesture == "left_click":
+                if current_time - self.last_click_time >= self.click_cooldown:
+                    pyautogui.click()
+                    self.last_click_time = current_time
+            elif gesture == "right_click":
+                if current_time - self.last_click_time >= self.click_cooldown:
+                    pyautogui.rightClick()
+                    self.last_click_time = current_time
+                
+            elif gesture == "scroll_start":
+                # Just started scrolling - no action needed
+                pass
+            elif gesture == "scroll_hold":
+                # Holding scroll position - no action needed
+                pass
+            elif gesture.startswith("scroll:"):
+                # Dynamic scroll based on Y movement
+                scroll_speed = float(gesture.split(":")[1])
+                scroll_units = int(-scroll_speed * 20)  # Convert to scroll units, invert direction
+                if abs(scroll_units) >= 1:
+                    pyautogui.scroll(scroll_units)
                 
         except:
             pass

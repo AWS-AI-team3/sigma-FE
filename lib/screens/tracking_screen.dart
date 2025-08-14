@@ -53,21 +53,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   void _startGestureListening() {
     _gestureSubscription = PythonService.gestureStream.listen((gesture) {
-      if (gesture == 'fist') {
-        // 주먹을 쥐었을 때 - 녹음 시작
+      if (gesture == 'recording_start') {
+        // 엄지+약지 pinch 시작 - 녹음 시작
         if (!_isMicEnabled) {
           setState(() {
             _isMicEnabled = true;
           });
         }
-      } else if (gesture == 'open_hand') {
-        // 손을 폈을 때 - 녹음 중지
+      } else if (gesture == 'recording_stop') {
+        // 엄지+약지 pinch 중지 - 녹음 중지
         if (_isMicEnabled) {
           setState(() {
             _isMicEnabled = false;
           });
         }
       }
+      // recording_hold은 녹음 상태 유지이므로 별도 처리 불필요
     });
   }
 

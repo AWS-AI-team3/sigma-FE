@@ -33,10 +33,11 @@ class HandOverlay(QWidget):
         # Tracking state
         self.is_tracking = False
         
-        # Camera
-        self.cap = cv2.VideoCapture(0)
+        # Camera with better settings
+        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Use DirectShow backend
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer size
         
         # Start tracking
         self.is_tracking = True
@@ -55,10 +56,12 @@ class HandOverlay(QWidget):
             Qt.WindowType.WindowStaysOnTopHint |
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.Tool |
-            Qt.WindowType.WindowTransparentForInput
+            Qt.WindowType.WindowTransparentForInput |
+            Qt.WindowType.WindowDoesNotAcceptFocus
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         
     def process_frame(self):
         """Process camera frame"""
@@ -67,6 +70,7 @@ class HandOverlay(QWidget):
             
         ret, frame = self.cap.read()
         if not ret:
+            # Try to reinitialize camera if read fails multiple times
             return
             
         # Flip frame for mirror effect
@@ -163,7 +167,7 @@ class HandOverlay(QWidget):
         screen_height = self.height()
         
         # Draw fingertips
-        fingertip_indices = [8, 12]  # Index and middle fingertips
+        fingertip_indices = [8, 12, 16]  # Index, middle, and ring fingertips
         
         for idx in fingertip_indices:
             if idx < len(self.landmarks):
@@ -171,12 +175,18 @@ class HandOverlay(QWidget):
                 y = int(self.landmarks[idx][1] * screen_height)
                 
                 # Choose color based on gesture
-                if self.gesture == "left_click" and idx == 8:
+                if (self.gesture and 
+                    (self.gesture.startswith("left_click") or self.gesture == "left_click") and idx == 8):
                     color = QColor(0, 255, 0, 255)  # Green for left click
-                elif self.gesture == "right_click" and idx == 12:
+                elif (self.gesture and 
+                      (self.gesture.startswith("right_click") or self.gesture == "right_click") and idx == 12):
                     color = QColor(255, 100, 0, 255)  # Orange for right click
-                elif self.gesture == "scroll":
-                    color = QColor(255, 0, 255, 255)  # Magenta for scroll
+                elif (self.gesture and 
+                      (self.gesture.startswith("recording") or self.gesture in ["recording_start", "recording_hold"]) and idx == 16):
+                    color = QColor(255, 255, 0, 255)  # Yellow for recording (ring finger)
+                elif (self.gesture and 
+                      (self.gesture.startswith("scroll") or self.gesture == "scroll_start" or self.gesture == "scroll_hold") and idx in [8, 12]):
+                    color = QColor(255, 0, 255, 255)  # Magenta for scroll gestures (only index and middle)
                 else:
                     color = QColor(128, 128, 128, 200)  # Gray default
                 
