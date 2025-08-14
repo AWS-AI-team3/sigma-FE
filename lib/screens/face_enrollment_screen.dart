@@ -19,7 +19,6 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   bool _isCameraInitialized = false;
   Uint8List? _capturedImageBytes;
 
-
   @override
   void initState() {
     super.initState();
@@ -36,7 +35,6 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     try {
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
-        // 전면 카메라 찾기 (얼굴 인증용)
         CameraDescription? frontCamera;
         for (final camera in cameras) {
           if (camera.lensDirection == CameraLensDirection.front) {
@@ -44,24 +42,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             break;
           }
         }
-        
-        // 전면 카메라가 없으면 첫 번째 카메라 사용
         final selectedCamera = frontCamera ?? cameras.first;
-        
         _controller = CameraController(
           selectedCamera,
           ResolutionPreset.medium,
         );
-        
         _initializeControllerFuture = _controller!.initialize();
         await _initializeControllerFuture;
-        
+
         if (mounted) {
           setState(() {
             _isCameraInitialized = true;
           });
-          print('카메라 비율: ${_controller!.value.aspectRatio}');
-          print('카메라 해상도: ${_controller!.value.previewSize}');
         }
       }
     } catch (e) {
@@ -170,16 +162,8 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.white,
-            size: 30,
-          ),
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.white,
-            size: 30,
-          ),
+          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
+          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
           const SizedBox(width: 20),
           Text(
             '얼굴 등록하기',
@@ -191,70 +175,60 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           ),
           const SizedBox(width: 20),
           Transform.rotate(
-            angle: 3.14159, // 180도 회전
-            child: const Icon(
-              Icons.chevron_right,
-              color: Colors.white,
-              size: 30,
-            ),
+            angle: 3.14159,
+            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
           ),
           Transform.rotate(
-            angle: 3.14159, // 180도 회전
-            child: const Icon(
-              Icons.chevron_right,
-              color: Colors.white,
-              size: 30,
-            ),
+            angle: 3.14159,
+            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
           ),
         ],
       ),
     );
   }
 
+  /// ★★★ "원형 카메라/이미지 영역"으로 완전히 교체된 부분 ★★★
   Widget _buildCameraArea() {
-    return Container(
-      width: 400, // 최대 너비 제한
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF8B5CF6),
-            Color(0xFF3B82F6),
+    return Center(
+      child: Container(
+        width: 300,
+        height: 300,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF8B5CF6),
+              Color(0xFF3B82F6),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 5,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(10), // 테두리 두께
+          child: _buildCameraPlaceholder(),
         ),
-        child: _buildCameraPlaceholder(),
       ),
     );
   }
 
-
-Widget _buildCameraPlaceholder() {
-    // 촬영된 이미지가 있으면 그것을 표시
+  Widget _buildCameraPlaceholder() {
     if (_isPhotoCaptured && _capturedImageBytes != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()..scale(-1.0, 1.0), // 좌우 반전
-          child: AspectRatio(
-            aspectRatio: _controller?.value.aspectRatio ?? (4/3),
+      return ClipOval(
+        child: SizedBox(
+          width: 280,
+          height: 280,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()..scale(-1.0, 1.0),
             child: Image.memory(
               _capturedImageBytes!,
               fit: BoxFit.cover,
@@ -265,28 +239,16 @@ Widget _buildCameraPlaceholder() {
     }
 
     if (!_isCameraInitialized || _controller == null) {
-      return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+      return ClipOval(
+        child: Container(
+          width: 280,
+          height: 280,
           color: const Color(0xFFF1F5F9),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                strokeWidth: 3.0,
-              ),
-              SizedBox(height: 20),
-              Text(
-                '카메라를 초기화하는 중...',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+              strokeWidth: 3.0,
+            ),
           ),
         ),
       );
@@ -296,36 +258,27 @@ Widget _buildCameraPlaceholder() {
       future: _initializeControllerFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: _controller!.value.aspectRatio,
-              child: CameraPreview(_controller!),
+          return ClipOval(
+            child: SizedBox(
+              width: 280,
+              height: 280,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: CameraPreview(_controller!),
+              ),
             ),
           );
         } else {
-          return Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+          return ClipOval(
+            child: Container(
+              width: 280,
+              height: 280,
               color: const Color(0xFFF1F5F9),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                    strokeWidth: 3.0,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    '얼굴을 화면에 맞춰주세요',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  strokeWidth: 3.0,
+                ),
               ),
             ),
           );
@@ -333,6 +286,7 @@ Widget _buildCameraPlaceholder() {
       },
     );
   }
+
 
   Widget _buildActionButtons() {
     if (!_isPhotoCaptured) {
@@ -456,12 +410,12 @@ Widget _buildCameraPlaceholder() {
       if (_controller != null && _isCameraInitialized) {
         final image = await _controller!.takePicture();
         final imageBytes = await image.readAsBytes();
-        
+
         setState(() {
           _capturedImageBytes = imageBytes;
           _isPhotoCaptured = true;
         });
-        
+
         print('이미지 촬영 완료 - 메모리에 저장됨 (${imageBytes.length} bytes)');
       }
     } catch (e) {
@@ -487,7 +441,7 @@ Widget _buildCameraPlaceholder() {
   void _handleRetake() {
     setState(() {
       _isPhotoCaptured = false;
-      _capturedImageBytes = null; // 메모리에서 이미지 제거
+      _capturedImageBytes = null;
     });
   }
 
@@ -559,7 +513,7 @@ Widget _buildCameraPlaceholder() {
                     ),
                     const SizedBox(height: 25),
                     Text(
-                      '얼굴 인증에 성공했습니다!',
+                      '얼굴 등록에 성공했습니다!',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -611,3 +565,4 @@ Widget _buildCameraPlaceholder() {
     );
   }
 }
+
