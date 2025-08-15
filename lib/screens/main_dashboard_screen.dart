@@ -6,8 +6,15 @@ import 'package:sigma_flutter_ui/screens/tracking_screen.dart';
 import 'package:sigma_flutter_ui/services/python_service.dart';
 
 // Figma Node ID: 1-523 (메인 페이지 - 얼굴 인증 성공 후)
-class MainDashboardScreen extends StatelessWidget {
+class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
+
+  @override
+  State<MainDashboardScreen> createState() => _MainDashboardScreenState();
+}
+
+class _MainDashboardScreenState extends State<MainDashboardScreen> {
+  bool _isSettingsHovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -17,11 +24,11 @@ class MainDashboardScreen extends StatelessWidget {
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
           final screenHeight = constraints.maxHeight;
-          
+
           // 고정된 윈도우 크기에 맞춰 컨테이너 크기 설정
           final containerWidth = screenWidth * 0.85;
           final containerHeight = screenHeight * 0.85;
-          
+
           return Container(
             width: double.infinity,
             height: double.infinity,
@@ -54,7 +61,7 @@ class MainDashboardScreen extends StatelessWidget {
                       top: 21,
                       left: 17,
                       child: Container(
-                        width: containerWidth * 0.92, // 626px 상대 크기
+                        width: containerWidth * 0.92,
                         height: 58,
                         decoration: BoxDecoration(
                           color: const Color(0xFF6186FF),
@@ -89,7 +96,7 @@ class MainDashboardScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            
+
                             // 프로필 아이콘
                             Positioned(
                               left: 12,
@@ -104,7 +111,7 @@ class MainDashboardScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            
+
                             // AWS님 텍스트
                             Positioned(
                               left: 68,
@@ -119,25 +126,31 @@ class MainDashboardScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            
-                            // 설정 아이콘 (오른쪽)
+
+                            // 설정 아이콘 (오른쪽) - 마우스 오버 효과 적용
                             Positioned(
                               right: 14,
                               top: 7,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                                  );
-                                },
-                                child: Container(
-                                  width: 45,
-                                  height: 45,
-                                  child: const Icon(
-                                    Icons.settings,
-                                    size: 30,
-                                    color: Colors.black,
+                              child: MouseRegion(
+                                onEnter: (_) => setState(() => _isSettingsHovered = true),
+                                onExit: (_) => setState(() => _isSettingsHovered = false),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                                    );
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 45,
+                                    height: 45,
+                                    
+                                    child: Icon(
+                                      Icons.settings,
+                                      size: 30,
+                                      color: _isSettingsHovered ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -146,7 +159,7 @@ class MainDashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
+
                     // FREE 텍스트
                     Positioned(
                       left: 32,
@@ -161,13 +174,13 @@ class MainDashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
+
                     // 트레킹 시작하기 버튼 (메인)
                     Positioned(
-                      left: containerWidth * 0.2, // 146px 상대 크기
+                      left: containerWidth * 0.2,
                       top: 234,
                       child: Container(
-                        width: containerWidth * 0.57, // 392px 상대 크기
+                        width: containerWidth * 0.57,
                         height: 103,
                         decoration: BoxDecoration(
                           color: const Color(0xFF0D0D11),
@@ -180,7 +193,7 @@ class MainDashboardScreen extends StatelessWidget {
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withOpacity(0.6),
                               blurRadius: 3,
                               spreadRadius: 0,
                               offset: const Offset(0, 1),
@@ -189,16 +202,14 @@ class MainDashboardScreen extends StatelessWidget {
                         ),
                         child: ElevatedButton(
                           onPressed: () async {
-                            // Start hand tracking with Python overlay
                             final success = await PythonService.startHandTracking();
-                            
+
                             if (success) {
-                              // Navigate to tracking screen
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const TrackingScreen()),
                               );
-                              
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('손 트래킹이 시작되었습니다'),
@@ -234,7 +245,7 @@ class MainDashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
+
                     // Log out 버튼 (하단 오른쪽)
                     Positioned(
                       right: 15,
@@ -266,7 +277,6 @@ class MainDashboardScreen extends StatelessWidget {
                         ),
                         child: ElevatedButton(
                           onPressed: () {
-                            // 로그아웃 - 로그인 화면으로 돌아가기
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -294,9 +304,9 @@ class MainDashboardScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Transform.rotate(
-                                angle: 3.14159, // 180도 회전
+                                angle: 3.14159,
                                 child: Transform.scale(
-                                  scaleY: -1, // Y축 반전
+                                  scaleY: -1,
                                   child: const Icon(
                                     Icons.arrow_back_ios,
                                     size: 15,
@@ -319,3 +329,4 @@ class MainDashboardScreen extends StatelessWidget {
     );
   }
 }
+

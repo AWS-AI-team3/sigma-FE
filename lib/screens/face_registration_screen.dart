@@ -75,7 +75,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             Expanded(
               child: Column(
                 children: [
-                  _buildTitle(),
+                  _buildBannerImage(),
                   const SizedBox(height: 30),
                   Expanded(
                     child: _buildCameraArea(),
@@ -143,50 +143,18 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     );
   }
 
-  Widget _buildTitle() {
-    return Container(
-      height: 55,
-      decoration: BoxDecoration(
-        color: const Color(0xFFB6A0F3),
-        borderRadius: BorderRadius.circular(27.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            spreadRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          const SizedBox(width: 20),
-          Text(
-            '얼굴 인증하기',
-            style: GoogleFonts.roboto(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Transform.rotate(
-            angle: 3.14159,
-            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          ),
-          Transform.rotate(
-            angle: 3.14159,
-            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          ),
-        ],
+  // 이미지
+  Widget _buildBannerImage() {
+    return SizedBox(
+      height: 55, // 기존 배너 영역 높이와 동일하게 맞춤
+      width: double.infinity,
+      child: Image.asset(
+        'assets/images/rigist_no.png',
+        fit: BoxFit.cover, // 너비 전체를 채움. 필요에 따라 contain으로 변경 가능
       ),
     );
   }
 
-  /// 원형 카메라 UI 적용
   Widget _buildCameraArea() {
     return Center(
       child: Container(
@@ -316,7 +284,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           child: Text(
             '촬영하기',
             style: GoogleFonts.roboto(
-              fontSize: 15,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -510,3 +478,4 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     );
   }
 }
+

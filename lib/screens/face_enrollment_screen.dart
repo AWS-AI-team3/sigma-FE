@@ -76,7 +76,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             Expanded(
               child: Column(
                 children: [
-                  _buildTitle(),
+                  _buildBannerImage(), // <-- 타이틀 배너 자리에 이미지 삽입
                   const SizedBox(height: 30),
                   Expanded(
                     child: _buildCameraArea(),
@@ -144,50 +144,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     );
   }
 
-  Widget _buildTitle() {
-    return Container(
-      height: 55,
-      decoration: BoxDecoration(
-        color: const Color(0xFFB6A0F3),
-        borderRadius: BorderRadius.circular(27.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            spreadRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          const SizedBox(width: 20),
-          Text(
-            '얼굴 등록하기',
-            style: GoogleFonts.roboto(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Transform.rotate(
-            angle: 3.14159,
-            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          ),
-          Transform.rotate(
-            angle: 3.14159,
-            child: const Icon(Icons.chevron_right, color: Colors.white, size: 30),
-          ),
-        ],
+  // 배너 위치에 enroll.png 이미지를 보라색 배경 위에 표시
+  Widget _buildBannerImage() {
+    return SizedBox(
+      height : 55,
+      width: double.infinity,
+      child: Image.asset(
+        'assets/images/enroll_no.png',
+        fit: BoxFit.cover,
       ),
     );
   }
 
-  /// ★★★ "원형 카메라/이미지 영역"으로 완전히 교체된 부분 ★★★
   Widget _buildCameraArea() {
     return Center(
       child: Container(
@@ -213,7 +181,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(10), // 테두리 두께
+          padding: const EdgeInsets.all(10),
           child: _buildCameraPlaceholder(),
         ),
       ),
@@ -286,7 +254,6 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       },
     );
   }
-
 
   Widget _buildActionButtons() {
     if (!_isPhotoCaptured) {
@@ -429,7 +396,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   void _handleRegister() {
     if (_capturedImageBytes != null) {
       print('등록용 이미지 준비됨 - presigned S3 업로드 예정 (${_capturedImageBytes!.length} bytes)');
-      // TODO: 여기에 presigned S3 업로드 로직 추가
+      // presigned S3 업로드 로직 추가 가능
       _showEnrollmentSuccessDialog(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -565,4 +532,5 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     );
   }
 }
+
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dotted_line/dotted_line.dart';
-import 'package:dotted_line/dotted_line.dart';
 
+void main() {
+  runApp(const MaterialApp(home: SettingsScreen()));
+}
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,8 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static const double labelWidth = 70;
 
-  Color getDropdownColor(String value) =>
-      value == '선택 안함' ? const Color(0xFFA0A0A0) : const Color(0xFF7DAEF3);
+  //  현재 클릭된 드롭다운 라벨 저장
+  String? _activeDropdownLabel;
+
+  Color getDropdownColor(String value, {bool isActive = false}) {
+    if (isActive) return const Color.fromARGB(255, 196, 148, 223); // 활성 시 주황색
+    return value == '선택 안함'
+        ? const Color(0xFFA0A0A0)
+        : const Color(0xFF7DAEF3);
+  }
 
   void _saveSettings() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -48,10 +57,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       BuildContext context,
       GlobalKey iconKey,
       String currentValue,
-      ValueChanged<String> onSelected) async {
-    RenderBox button = iconKey.currentContext!.findRenderObject() as RenderBox;
+      ValueChanged<String> onSelected,
+      String label) async {
+    // 아이콘 클릭 시 현재 드롭다운 활성 상태로 표시
+    setState(() {
+      _activeDropdownLabel = label;
+    });
+
+    RenderBox button =
+        iconKey.currentContext!.findRenderObject() as RenderBox;
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final Offset pos = button.localToGlobal(Offset(0, button.size.height), ancestor: overlay);
+    final Offset pos =
+        button.localToGlobal(Offset(0, button.size.height), ancestor: overlay);
 
     final RelativeRect position = RelativeRect.fromLTRB(
       pos.dx,
@@ -70,20 +87,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             option,
             style: GoogleFonts.roboto(
               fontSize: 13,
-              color: option == '선택 안함' ? const Color(0xFFA0A0A0) : Colors.black,
+              color: option == '선택 안함'
+                  ? const Color(0xFFA0A0A0)
+                  : Colors.black,
             ),
           ),
         );
       }).toList(),
     );
-    if (selected != null && selected != currentValue) onSelected(selected);
+
+    if (selected != null && selected != currentValue) {
+      onSelected(selected);
+    }
+
+    // 메뉴 닫히면 비활성화
+    setState(() {
+      _activeDropdownLabel = null;
+    });
   }
 
   Widget _buildGestureDropdown(
       BuildContext context, String label, String value, ValueChanged<String> onChanged) {
     final iconKey = GlobalKey();
+    final bool isActive = _activeDropdownLabel == label;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0), // 간격은 부모 Column에서 처리
+      padding: const EdgeInsets.symmetric(vertical: 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -109,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: getDropdownColor(value),
+                  color: getDropdownColor(value, isActive: isActive),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -132,9 +161,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     key: iconKey,
                     behavior: HitTestBehavior.translucent,
                     onTap: () async {
-                      await _showCustomDropdownMenu(context, iconKey, value, onChanged);
+                      await _showCustomDropdownMenu(
+                          context, iconKey, value, onChanged, label);
                     },
-                    child: const Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey),
+                    child: const Icon(Icons.arrow_drop_down,
+                        size: 20, color: Colors.grey),
                   ),
                 ],
               ),
@@ -145,8 +176,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildHeader(String title) {
-    return CapsuleHeader(text: title);
+  // 커스텀 Back 버튼
+  Widget _buildBackButton() {
+    return _CustomBackButton(
+      onTap: () => Navigator.pop(context),
+    );
+  }
+
+  Widget _buildCapsuleHeaderImage(String assetPath,
+      {double width = 154, double height = 34}) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Image.asset(assetPath, width: width, height: height, fit: BoxFit.fill),
+    );
   }
 
   Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
@@ -181,8 +224,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final containerWidth = (MediaQuery.of(context).size.width * 0.96).clamp(380.0, 820.0);
-    final containerHeight = (MediaQuery.of(context).size.height * 0.88).clamp(480.0, 720.0);
+    final containerWidth =
+        (MediaQuery.of(context).size.width * 0.96).clamp(380.0, 820.0);
+    final containerHeight =
+        (MediaQuery.of(context).size.height * 0.88).clamp(480.0, 720.0);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE5E5E5),
@@ -205,7 +250,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           child: Column(
             children: [
-              // 상단바
               Padding(
                 padding: EdgeInsets.fromLTRB(containerWidth * 0.02, 27, containerWidth * 0.02, 0),
                 child: Row(
@@ -228,24 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(
                       width: 95,
                       height: 36,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6186FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          elevation: 0,
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Back',
-                            style: GoogleFonts.roboto(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: _buildBackButton(),
                     ),
                   ],
                 ),
@@ -260,15 +287,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // 왼쪽: 손동작
                     Expanded(
                       flex: 11,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 22),
+                        padding: const EdgeInsets.only(right: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildHeader('손동작'),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 5, left: 15),
+                              child: _buildCapsuleHeaderImage('assets/images/hand_no.png'),
+                            ),
                             const SizedBox(height: 20),
                             _buildGestureDropdown(context, '좌클릭', _leftClickValue,
                                 (v) => setState(() => _leftClickValue = v)),
@@ -289,7 +318,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    // 세로 점선 구분
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: DottedLine(
@@ -300,7 +328,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         dashColor: const Color(0xFFCEC8F9),
                       ),
                     ),
-                    // 오른쪽: 화면
                     Expanded(
                       flex: 11,
                       child: Padding(
@@ -308,7 +335,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildHeader('화면'),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 20),
+                              child: _buildCapsuleHeaderImage('assets/images/screen_no.png'),
+                            ),
                             const SizedBox(height: 22),
                             _buildToggleRow('마우스 커서 표시', _showMouseCursor,
                                 (v) => setState(() => _showMouseCursor = v)),
@@ -360,67 +390,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-/// 캡슐 형태 보라색 헤더 위젯
-class CapsuleHeader extends StatelessWidget {
-  final String text;
-  final Color color;
-  const CapsuleHeader({
-    super.key,
-    required this.text,
-    this.color = const Color(0xFFB6A0F3),
-  });
+// 마우스 오버 Back 버튼
+class _CustomBackButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _CustomBackButton({required this.onTap});
+
+  @override
+  State<_CustomBackButton> createState() => _CustomBackButtonState();
+}
+
+class _CustomBackButtonState extends State<_CustomBackButton> {
+  bool _isHovering = false;
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 34,
-      child: CustomPaint(
-        painter: _CapsulePainter(color),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 26),
-            child: Text(
-              text,
-              style: GoogleFonts.roboto(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          _isHovering = true;
+        });
+      },
+      onExit: (_) {
+        setState(() {
+          _isHovering = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFF6186FF).withOpacity(_isHovering ? 0.85 : 1.0),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: _isHovering
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 5,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: widget.onTap,
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.arrow_back, color: Colors.white, size: 18),
+                const SizedBox(width: 4),
+                Text(
+                  'Back',
+                  style: GoogleFonts.roboto(
+                      color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
-}
-
-class _CapsulePainter extends CustomPainter {
-  final Color color;
-  _CapsulePainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final radius = size.height / 2;
-    // 가운데 사각형
-    canvas.drawRect(Rect.fromLTWH(radius, 0, size.width - 2 * radius, size.height), paint);
-    // 왼쪽 반원
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(radius, radius), radius: radius),
-      0.5 * 3.1416,
-      3.1416,
-      false,
-      paint,
-    );
-    // 오른쪽 반원
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(size.width - radius, radius), radius: radius),
-      -0.5 * 3.1416,
-      3.1416,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

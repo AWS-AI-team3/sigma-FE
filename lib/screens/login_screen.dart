@@ -16,52 +16,69 @@ class LoginScreen extends StatelessWidget {
           final screenWidth = constraints.maxWidth;
           final screenHeight = constraints.maxHeight;
           final containerWidth = screenWidth * 0.85;
-          final containerHeight = screenHeight * 0.85;
+          final containerHeight = screenHeight * 0.75;
           final logoSize = (containerWidth * 0.18).clamp(72.0, 120.0);
           const double titleFontSize = 40.0;
           const double subtitleFontSize = 11.0;
           const double loginFontSize = 28.0;
           const double buttonFontSize = 16.0;
-
+          final double loginBoxHeight = containerHeight * 0.38;
           return Center(
-            child: Stack(
-              children: [
-                // 로그인 메인 박스
-                Container(
-                  width: containerWidth,
-                  height: containerHeight,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+            child: Container(
+              width: containerWidth,
+              height: containerHeight,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 10),
                   ),
-                  child: Column(
-                    children: [
-                      // 상단 로고+타이틀
-                      Container(
-                        width: double.infinity,
-                        height: containerHeight * 0.23,
-                        padding: EdgeInsets.all(containerWidth * 0.04),
-                        child: _buildHeaderSection(
-                          logoSize: logoSize,
-                          titleFontSize: titleFontSize,
-                          subtitleFontSize: subtitleFontSize,
-                          containerWidth: containerWidth,
+                ],
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _CloseButton(
+                      onTap: () {
+                        if (Platform.isAndroid) {
+                          SystemNavigator.pop();
+                        } else {
+                          exit(0);
+                        }
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 48), // 엑스 버튼 밑 여백
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        // 상단 로고/타이틀
+                        SizedBox(
+                          height: containerHeight * 0.21,
+                          child: _buildHeaderSection(
+                            logoSize: logoSize,
+                            titleFontSize: titleFontSize,
+                            subtitleFontSize: subtitleFontSize,
+                            containerWidth: containerWidth,
+                          ),
                         ),
-                      ),
-                      // 로그인 쪽(구글 등)
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          margin: EdgeInsets.all(containerWidth * 0.04),
-                          padding: EdgeInsets.all(containerWidth * 0.06),
+                        const Spacer(),
+                        // 로그인 박스 (더 늘어난 높이)
+                        Container(
+                          height: loginBoxHeight,
+                          margin: EdgeInsets.symmetric(
+                              vertical: containerWidth * 0.01,
+                              horizontal: containerWidth * 0.04),
+                          padding: EdgeInsets.all(containerWidth * 0.05),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0EEFF),
                             borderRadius: BorderRadius.circular(20),
@@ -73,25 +90,12 @@ class LoginScreen extends StatelessWidget {
                             containerWidth: containerWidth,
                           ),
                         ),
-                      ),
-                    ],
+                        const Spacer(),
+                      ],
+                    ),
                   ),
-                ),
-                // 파란색 동그라미 X 버튼
-                Positioned(
-                  top: 18,
-                  right: 18,
-                  child: _CloseButton(
-                    onTap: () {
-                      if (Platform.isAndroid) {
-                        SystemNavigator.pop();
-                      } else {
-                        exit(0);
-                      }
-                    },
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -110,7 +114,6 @@ class LoginScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 로고 영역
           Container(
             width: logoSize,
             height: logoSize,
@@ -140,7 +143,6 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
           SizedBox(width: containerWidth * 0.06),
-          // 타이틀/부제목
           _buildTitleSection(titleFontSize, subtitleFontSize),
         ],
       ),
@@ -152,7 +154,6 @@ class LoginScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Smart Interactive Gesture
         RichText(
           text: TextSpan(
             style: GoogleFonts.poppins(
@@ -171,7 +172,6 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
         SizedBox(height: titleFontSize * 0.1),
-        // SIGMA main
         Text(
           'SIGMA',
           style: GoogleFonts.inter(
@@ -182,7 +182,6 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
         SizedBox(height: titleFontSize * 0.1),
-        // Management Assistant (오른쪽 정렬용 패딩)
         Padding(
           padding: EdgeInsets.only(left: 72.0),
           child: RichText(
@@ -211,76 +210,80 @@ class LoginScreen extends StatelessWidget {
     required double buttonFontSize,
     required double containerWidth,
   }) {
-    return Column(
-      children: [
-        SizedBox(height: loginFontSize * 0.5),
-        Text(
-          'Login',
-          style: GoogleFonts.roboto(
-            fontSize: loginFontSize,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF2E2981),
-            height: 1.0,
-          ),
-        ),
-        SizedBox(height: loginFontSize * 1.5),
-        Container(
-          width: containerWidth * 0.8,
-          height: (containerWidth * 0.1).clamp(50.0, 60.0),
-          child: ElevatedButton(
-            onPressed: () {
-              _handleGoogleLogin(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.grey[700],
-              elevation: 3,
-              shadowColor: Colors.black.withOpacity(0.15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-                side: BorderSide(
-                  color: Colors.grey[300]!,
-                  width: 1,
-                ),
-              ),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // 박스 내부 요소 자동 중앙 정렬
+        children: [
+          // 여기만 수정됨: 'Login' 텍스트→이미지
+          SizedBox(
+            height: loginFontSize * 1.2,
+            child: Image.asset(
+              'assets/images/logintxt.png',
+              fit: BoxFit.contain,
+              // 원하는 경우 width, height 등을 조정하세요
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/google_logo.png',
-                  width: buttonFontSize * 1.56,
-                  height: buttonFontSize * 1.56,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: buttonFontSize * 1.56,
-                      height: buttonFontSize * 1.56,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4285F4),
-                        borderRadius: BorderRadius.circular(buttonFontSize * 0.78),
-                      ),
-                      child: Icon(
-                        Icons.g_mobiledata,
-                        color: Colors.white,
-                        size: buttonFontSize,
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(width: buttonFontSize * 0.8),
-                Text(
-                  'Continue with Google',
-                  style: GoogleFonts.roboto(
-                    fontSize: buttonFontSize,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
+          ),
+          SizedBox(height: loginFontSize * 1.0),
+          // 버튼의 크기와 패딩을 충분히 크게
+          SizedBox(
+            width: containerWidth * 0.82,
+            height: (containerWidth * 0.13).clamp(60.0, 80.0),
+            child: ElevatedButton(
+              onPressed: () {
+                _handleGoogleLogin(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.grey[700],
+                elevation: 3,
+                shadowColor: Colors.black.withOpacity(0.15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
                   ),
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/google_logo.png',
+                    width: buttonFontSize * 1.56,
+                    height: buttonFontSize * 1.56,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: buttonFontSize * 1.56,
+                        height: buttonFontSize * 1.56,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4285F4),
+                          borderRadius: BorderRadius.circular(buttonFontSize * 0.78),
+                        ),
+                        child: Icon(
+                          Icons.g_mobiledata,
+                          color: Colors.white,
+                          size: buttonFontSize,
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(width: buttonFontSize * 0.8),
+                  Text(
+                    'Continue with Google',
+                    style: GoogleFonts.roboto(
+                      fontSize: buttonFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -292,28 +295,23 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-///
-
+// CloseButton 클래스(원본 그대로)
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
   const _CloseButton({super.key, required this.onTap});
-
   @override
   State<_CloseButton> createState() => _CloseButtonState();
 }
-
 class _CloseButtonState extends State<_CloseButton> {
   bool _hovering = false;
   bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     final Color base = const Color(0xFF3C4FE0);
     Color bg = _pressed
         ? base.withOpacity(0.5)
         : (_hovering ? base.withOpacity(0.8) : base);
-
-    return MouseRegion(                                              
+    return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() {
