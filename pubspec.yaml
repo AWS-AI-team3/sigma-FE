@@ -1,0 +1,45 @@
+name: sigma_flutter_ui
+description: SIGMA Gesture Control UI in Flutter
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  
+  # WebSocket 통신
+  web_socket_channel: ^2.4.0
+  
+  # 오버레이 창 관리
+  window_manager: ^0.3.7
+  
+  # JSON 처리
+  json_serializable: ^6.7.1
+  
+  # HTTP 클라이언트
+  http: ^1.1.0
+  
+  # URL 런처
+  url_launcher: ^6.2.1
+  
+  # 카메라 기능
+  camera: ^0.10.5+5
+  camera_windows: ^0.2.1+4
+  
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
