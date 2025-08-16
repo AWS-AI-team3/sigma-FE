@@ -411,7 +411,7 @@ class HandOverlay(QWidget):
         screen_height = self.height()
         
         # Draw fingertips
-        fingertip_indices = [8, 12, 16]  # Index, middle, and ring fingertips
+        fingertip_indices = [8, 12, 16, 20]  # Index, middle, ring, and pinky fingertips
         
         for idx in fingertip_indices:
             if idx < len(self.landmarks):
@@ -431,6 +431,9 @@ class HandOverlay(QWidget):
                 elif (self.gesture and 
                       (self.gesture.startswith("scroll") or self.gesture == "scroll_start" or self.gesture == "scroll_hold") and idx in [8, 12]):
                     color = QColor(255, 0, 255, 255)  # Magenta for scroll gestures (only index and middle)
+                elif (self.gesture and 
+                      (self.gesture.startswith("paste") or self.gesture in ["paste_start", "paste_hold"]) and idx == 20):
+                    color = QColor(0, 255, 255, 255)  # Cyan for paste gesture (pinky finger)
                 else:
                     color = QColor(128, 128, 128, 200)  # Gray default
                 

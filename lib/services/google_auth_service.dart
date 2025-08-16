@@ -1,5 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -7,10 +8,8 @@ import 'dart:math';
 import 'auth_storage_service.dart';
 
 class GoogleAuthService {
-  static const String clientId = String.fromEnvironment('GOOGLE_CLIENT_ID', 
-    defaultValue: 'your_google_client_id_here');
-  static const String clientSecret = String.fromEnvironment('GOOGLE_CLIENT_SECRET', 
-    defaultValue: 'your_google_client_secret_here');
+  static String get clientId => dotenv.env['GOOGLE_CLIENT_ID'] ?? 'your_google_client_id_here';
+  static String get clientSecret => dotenv.env['GOOGLE_CLIENT_SECRET'] ?? 'your_google_client_secret_here';
   static const String redirectUri = 'http://localhost:8080/login/oauth2/code/google';
   static HttpServer? _callbackServer;
   static Completer<String?>? _authCompleter;

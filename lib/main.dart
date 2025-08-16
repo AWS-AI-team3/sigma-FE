@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'routes/app_routes.dart';
 import 'services/python_service.dart';
 import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // .env 파일 로드
+  await dotenv.load(fileName: '.env');
   
   await windowManager.ensureInitialized();
   
