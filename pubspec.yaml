@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
-<<<<<<< HEAD
   
   # WebSocket 통신
   web_socket_channel: ^2.4.0
@@ -35,28 +34,8 @@ dependencies:
   # 환경 변수
   flutter_dotenv: ^5.1.0
   
-
-=======
-
-  # WebSocket 통신
-  web_socket_channel: ^2.4.0
-
-  # 오버레이 창 관리
-  window_manager: ^0.3.7
-
-  # JSON 처리
-  json_serializable: ^6.7.1
-
-  # HTTP 클라이언트
-  http: ^1.1.0
-
-  # 카메라 기능
-  camera: ^0.10.5+5
-  camera_windows: ^0.2.1+4
-
   # 점선 구분선
-  dotted_line: ^3.1.0  # ★ 이 줄 추가! pub.dev에서 최신 버전 확인 필요
->>>>>>> round_camera
+  dotted_line: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -65,13 +44,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-<<<<<<< HEAD
   
   assets:
     - assets/images/
     - .env
-=======
-
-  assets:
-    - assets/images/
->>>>>>> round_camera
