@@ -5,10 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   camera_windows
   screen_retriever
-<<<<<<< HEAD
   url_launcher_windows
-=======
->>>>>>> round_camera
   window_manager
 )
 

@@ -1,20 +1,5 @@
 # SIGMA Flutter UI
 
-<<<<<<< HEAD
-
-## 실행 방법
-
-```bash
-#uv 설치
-pip install uv
-
-# 종속성 설치
-flutter pub get
-
-# 앱 실행
-flutter run
-```
-=======
 SIGMA 제스처 컨트롤 앱의 Flutter UI 구현 - Figma 디자인 1:1 복원
 
 ## 설치 및 실행
@@ -100,4 +85,16 @@ flutter_ui/
 2. 제스처 제어 화면 구현  
 3. 음성 제어 화면 구현
 4. 오버레이 기능 연동 (네이티브 플러그인)
->>>>>>> round_camera
+
+## 실행 방법
+
+```bash
+#uv 설치
+pip install uv
+
+# 종속성 설치
+flutter pub get
+
+# 앱 실행
+flutter run
+```

@@ -3,15 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sigma_flutter_ui/screens/login_screen.dart';
 import 'package:sigma_flutter_ui/screens/settings_screen.dart';
 import 'package:sigma_flutter_ui/screens/tracking_screen.dart';
-<<<<<<< HEAD
 import 'package:sigma_flutter_ui/screens/face_registration_screen.dart';
 import 'package:sigma_flutter_ui/services/python_service.dart';
 import 'package:sigma_flutter_ui/services/face_auth_service.dart';
 import 'package:sigma_flutter_ui/services/user_service.dart';
 import 'package:sigma_flutter_ui/services/google_auth_service.dart';
-=======
-import 'package:sigma_flutter_ui/services/python_service.dart';
->>>>>>> round_camera
 
 // Figma Node ID: 1-523 (메인 페이지 - 얼굴 인증 성공 후)
 class MainDashboardScreen extends StatefulWidget {
@@ -22,10 +18,10 @@ class MainDashboardScreen extends StatefulWidget {
 }
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
-<<<<<<< HEAD
   String _userName = 'AWS님';
   String? _profileUrl;
   String _subscriptStatus = 'FREE';
+  bool _isSettingsHovered = false;
 
   @override
   void initState() {
@@ -46,9 +42,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       }
     }
   }
-=======
-  bool _isSettingsHovered = false;
->>>>>>> round_camera
 
   @override
   Widget build(BuildContext context) {
@@ -58,19 +51,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
           final screenHeight = constraints.maxHeight;
-<<<<<<< HEAD
-          
-          // 고정된 윈도우 크기에 맞춰 컨테이너 크기 설정
-          final containerWidth = screenWidth * 0.85;
-          final containerHeight = screenHeight * 0.85;
-          
-=======
 
           // 고정된 윈도우 크기에 맞춰 컨테이너 크기 설정
           final containerWidth = screenWidth * 0.85;
           final containerHeight = screenHeight * 0.85;
-
->>>>>>> round_camera
           return Container(
             width: double.infinity,
             height: double.infinity,
@@ -103,11 +87,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                       top: 21,
                       left: 17,
                       child: Container(
-<<<<<<< HEAD
                         width: containerWidth * 0.92, // 626px 상대 크기
-=======
-                        width: containerWidth * 0.92,
->>>>>>> round_camera
                         height: 58,
                         decoration: BoxDecoration(
                           color: const Color(0xFF6186FF),
@@ -142,11 +122,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 ),
                               ),
                             ),
-<<<<<<< HEAD
-                            
-=======
 
->>>>>>> round_camera
                             // 프로필 아이콘
                             Positioned(
                               left: 12,
@@ -154,7 +130,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               child: Container(
                                 width: 50,
                                 height: 50,
-<<<<<<< HEAD
                                 child: _profileUrl != null
                                     ? ClipOval(
                                         child: Image.network(
@@ -178,28 +153,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                       ),
                               ),
                             ),
-                            
-                            // 사용자 이름 텍스트
-=======
-                                child: const Icon(
-                                  Icons.account_circle,
-                                  size: 50,
-                                  color: Color(0xFF0D0D11),
-                                ),
-                              ),
-                            ),
 
-                            // AWS님 텍스트
->>>>>>> round_camera
+                            // 사용자 이름 텍스트
                             Positioned(
                               left: 68,
                               top: 10,
                               child: Text(
-<<<<<<< HEAD
                                 _userName,
-=======
-                                'AWS님',
->>>>>>> round_camera
                                 style: GoogleFonts.roboto(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -208,27 +168,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 ),
                               ),
                             ),
-<<<<<<< HEAD
-                            
-                            // 설정 아이콘 (오른쪽)
-                            Positioned(
-                              right: 14,
-                              top: 7,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                                  );
-                                },
-                                child: Container(
-                                  width: 45,
-                                  height: 45,
-                                  child: const Icon(
-                                    Icons.settings,
-                                    size: 30,
-                                    color: Colors.black,
-=======
 
                             // 설정 아이콘 (오른쪽) - 마우스 오버 효과 적용
                             Positioned(
@@ -254,7 +193,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                       size: 30,
                                       color: _isSettingsHovered ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                                     ),
->>>>>>> round_camera
                                   ),
                                 ),
                               ),
@@ -263,22 +201,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                         ),
                       ),
                     ),
-<<<<<<< HEAD
-                    
-                    // 구독 상태 텍스트
-=======
 
-                    // FREE 텍스트
->>>>>>> round_camera
+                    // 구독 상태 텍스트
                     Positioned(
                       left: 32,
                       top: 75,
                       child: Text(
-<<<<<<< HEAD
                         _subscriptStatus,
-=======
-                        'FREE',
->>>>>>> round_camera
                         style: GoogleFonts.roboto(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -287,23 +216,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                         ),
                       ),
                     ),
-<<<<<<< HEAD
-                    
+
                     // 트레킹 시작하기 버튼 (메인)
                     Positioned(
                       left: containerWidth * 0.2, // 146px 상대 크기
                       top: 234,
                       child: Container(
                         width: containerWidth * 0.57, // 392px 상대 크기
-=======
-
-                    // 트레킹 시작하기 버튼 (메인)
-                    Positioned(
-                      left: containerWidth * 0.2,
-                      top: 234,
-                      child: Container(
-                        width: containerWidth * 0.57,
->>>>>>> round_camera
                         height: 103,
                         decoration: BoxDecoration(
                           color: const Color(0xFF0D0D11),
@@ -316,11 +235,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-<<<<<<< HEAD
                               color: Colors.black.withOpacity(0.3),
-=======
-                              color: Colors.black.withOpacity(0.6),
->>>>>>> round_camera
                               blurRadius: 3,
                               spreadRadius: 0,
                               offset: const Offset(0, 1),
@@ -329,7 +244,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                         ),
                         child: ElevatedButton(
                           onPressed: () async {
-<<<<<<< HEAD
                             // 1. 얼굴 인증 세션 체크
                             final sessionResult = await FaceAuthService.checkFaceSession();
                             
@@ -369,29 +283,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               }
                             } else {
                               _showFaceAuthRequiredDialog(context);
-=======
-                            final success = await PythonService.startHandTracking();
-
-                            if (success) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const TrackingScreen()),
-                              );
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('손 트래킹이 시작되었습니다'),
-                                  backgroundColor: Color(0xFF6186FF),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('손 트래킹 시작에 실패했습니다'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
->>>>>>> round_camera
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -414,11 +305,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                         ),
                       ),
                     ),
-<<<<<<< HEAD
-                    
-=======
 
->>>>>>> round_camera
                     // Log out 버튼 (하단 오른쪽)
                     Positioned(
                       right: 15,
@@ -449,7 +336,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-<<<<<<< HEAD
                           onPressed: () async {
                             // 서버 로그아웃 API 호출
                             await GoogleAuthService.logout();
@@ -462,14 +348,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 (route) => false,
                               );
                             }
-=======
-                          onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LoginScreen()),
-                              (route) => false,
-                            );
->>>>>>> round_camera
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF677BFF),
@@ -492,15 +370,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               ),
                               const SizedBox(width: 8),
                               Transform.rotate(
-<<<<<<< HEAD
                                 angle: 3.14159, // 180도 회전
                                 child: Transform.scale(
                                   scaleY: -1, // Y축 반전
-=======
-                                angle: 3.14159,
-                                child: Transform.scale(
-                                  scaleY: -1,
->>>>>>> round_camera
                                   child: const Icon(
                                     Icons.arrow_back_ios,
                                     size: 15,
@@ -522,7 +394,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       ),
     );
   }
-<<<<<<< HEAD
 
   void _showFaceAuthRequiredDialog(BuildContext context) {
     showDialog(
@@ -683,7 +554,3 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     );
   }
 }
-=======
-}
-
->>>>>>> round_camera
