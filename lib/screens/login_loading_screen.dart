@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'face_registration_screen.dart';
 import 'face_enrollment_screen.dart';
+<<<<<<< HEAD
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
+=======
+>>>>>>> round_camera
 
 class LoginLoadingScreen extends StatefulWidget {
   const LoginLoadingScreen({super.key});
@@ -19,6 +22,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     // 실제 Google OAuth 및 얼굴 등록 확인 처리
     _handleGoogleLogin();
   }
@@ -87,6 +91,34 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
       },
     );
   }
+=======
+    // 실제 OAuth 요청 대신 시뮬레이션
+    _simulateGoogleOAuth();
+  }
+
+  Future<void> _simulateGoogleOAuth() async {
+    // TODO: 실제 Google OAuth API 호출
+    // 현재는 시뮬레이션만 수행
+    await Future.delayed(const Duration(seconds: 3));
+    
+    if (mounted) {
+      // 사용자 등록 상태에 따라 화면 분기
+      if (_isUserRegistered) {
+        // 기존 사용자 - 얼굴 인증 화면으로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const FaceRegistrationScreen()),
+        );
+      } else {
+        // 신규 사용자 - 얼굴 등록 화면으로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const FaceEnrollmentScreen()),
+        );
+      }
+    }
+  }
+>>>>>>> round_camera
   
   // 사용자 등록 완료 시 호출할 정적 메소드
   static void setUserRegistered() {

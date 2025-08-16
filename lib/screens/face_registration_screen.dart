@@ -3,8 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sigma_flutter_ui/screens/main_dashboard_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
+<<<<<<< HEAD
 import 'package:sigma_flutter_ui/services/camera_manager.dart';
 import 'package:sigma_flutter_ui/services/face_auth_service.dart';
+=======
+>>>>>>> round_camera
 
 class FaceRegistrationScreen extends StatefulWidget {
   const FaceRegistrationScreen({super.key});
@@ -16,12 +19,18 @@ class FaceRegistrationScreen extends StatefulWidget {
 class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   bool _isPhotoCaptured = false;
   CameraController? _controller;
+<<<<<<< HEAD
   bool _isCameraReady = false;
   Uint8List? _capturedImageBytes;
   bool _isAuthenticating = false;
   
   // Presigned URL 데이터
   Map<String, dynamic>? _presignedData;
+=======
+  Future<void>? _initializeControllerFuture;
+  bool _isCameraInitialized = false;
+  Uint8List? _capturedImageBytes;
+>>>>>>> round_camera
 
   @override
   void initState() {
@@ -30,6 +39,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   }
 
   @override
+<<<<<<< HEAD
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Arguments에서 presigned URL 데이터 받기
@@ -40,11 +50,16 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   void dispose() {
     // 화면을 떠날 때 카메라 해제
     CameraManager.instance.dispose();
+=======
+  void dispose() {
+    _controller?.dispose();
+>>>>>>> round_camera
     super.dispose();
   }
 
   Future<void> _initializeCamera() async {
     try {
+<<<<<<< HEAD
       _controller = await CameraManager.instance.initializeCamera();
       if (mounted && _controller != null) {
         setState(() {
@@ -58,6 +73,33 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           _isCameraReady = false;
         });
       }
+=======
+      final cameras = await availableCameras();
+      if (cameras.isNotEmpty) {
+        CameraDescription? frontCamera;
+        for (final camera in cameras) {
+          if (camera.lensDirection == CameraLensDirection.front) {
+            frontCamera = camera;
+            break;
+          }
+        }
+        final selectedCamera = frontCamera ?? cameras.first;
+        _controller = CameraController(
+          selectedCamera,
+          ResolutionPreset.medium,
+        );
+        _initializeControllerFuture = _controller!.initialize();
+        await _initializeControllerFuture;
+
+        if (mounted) {
+          setState(() {
+            _isCameraInitialized = true;
+          });
+        }
+      }
+    } catch (e) {
+      print('카메라 초기화 오류: $e');
+>>>>>>> round_camera
     }
   }
 
@@ -76,7 +118,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             Expanded(
               child: Column(
                 children: [
+<<<<<<< HEAD
                   _buildTitle(),
+=======
+                  _buildBannerImage(),
+>>>>>>> round_camera
                   const SizedBox(height: 30),
                   Expanded(
                     child: _buildCameraArea(),
@@ -144,6 +190,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildTitle() {
     return Container(
       height: 55,
@@ -199,11 +246,22 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             ),
           ),
         ],
+=======
+  // 이미지
+  Widget _buildBannerImage() {
+    return SizedBox(
+      height: 55, // 기존 배너 영역 높이와 동일하게 맞춤
+      width: double.infinity,
+      child: Image.asset(
+        'assets/images/rigist_no.png',
+        fit: BoxFit.cover, // 너비 전체를 채움. 필요에 따라 contain으로 변경 가능
+>>>>>>> round_camera
       ),
     );
   }
 
   Widget _buildCameraArea() {
+<<<<<<< HEAD
     return Container(
       width: 400, // 최대 너비 제한
       decoration: BoxDecoration(
@@ -232,11 +290,41 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           color: Colors.white,
         ),
         child: _buildCameraPlaceholder(),
+=======
+    return Center(
+      child: Container(
+        width: 300,
+        height: 300,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF8B5CF6),
+              Color(0xFF3B82F6),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: _buildCameraPlaceholder(),
+        ),
+>>>>>>> round_camera
       ),
     );
   }
 
   Widget _buildCameraPlaceholder() {
+<<<<<<< HEAD
     // 촬영된 이미지가 있으면 그것을 표시
     if (_isPhotoCaptured && _capturedImageBytes != null) {
       return ClipRRect(
@@ -246,6 +334,16 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           transform: Matrix4.identity()..scale(-1.0, 1.0), // 좌우 반전
           child: AspectRatio(
             aspectRatio: _controller?.value.aspectRatio ?? (4/3),
+=======
+    if (_isPhotoCaptured && _capturedImageBytes != null) {
+      return ClipOval(
+        child: SizedBox(
+          width: 280,
+          height: 280,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()..scale(-1.0, 1.0),
+>>>>>>> round_camera
             child: Image.memory(
               _capturedImageBytes!,
               fit: BoxFit.cover,
@@ -255,6 +353,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
       );
     }
 
+<<<<<<< HEAD
     if (!_isCameraReady || _controller == null) {
       return Container(
         decoration: BoxDecoration(
@@ -278,11 +377,25 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                 ),
               ),
             ],
+=======
+    if (!_isCameraInitialized || _controller == null) {
+      return ClipOval(
+        child: Container(
+          width: 280,
+          height: 280,
+          color: const Color(0xFFF1F5F9),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+              strokeWidth: 3.0,
+            ),
+>>>>>>> round_camera
           ),
         ),
       );
     }
 
+<<<<<<< HEAD
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: AspectRatio(
@@ -293,6 +406,41 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   }
 
 
+=======
+    return FutureBuilder<void>(
+      future: _initializeControllerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return ClipOval(
+            child: SizedBox(
+              width: 280,
+              height: 280,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: CameraPreview(_controller!),
+              ),
+            ),
+          );
+        } else {
+          return ClipOval(
+            child: Container(
+              width: 280,
+              height: 280,
+              color: const Color(0xFFF1F5F9),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  strokeWidth: 3.0,
+                ),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+>>>>>>> round_camera
   Widget _buildActionButtons() {
     if (!_isPhotoCaptured) {
       return Container(
@@ -323,7 +471,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           child: Text(
             '촬영하기',
             style: GoogleFonts.roboto(
+<<<<<<< HEAD
               fontSize: 15,
+=======
+              fontSize: 20,
+>>>>>>> round_camera
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -351,7 +503,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             ],
           ),
           child: ElevatedButton(
+<<<<<<< HEAD
             onPressed: _isAuthenticating ? null : _handleAuthenticate,
+=======
+            onPressed: _handleAuthenticate,
+>>>>>>> round_camera
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFCADDFF),
               foregroundColor: Colors.black,
@@ -360,6 +516,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                 borderRadius: BorderRadius.circular(30),
               ),
             ),
+<<<<<<< HEAD
             child: _isAuthenticating
                 ? const SizedBox(
                     width: 20,
@@ -377,6 +534,16 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                       color: Colors.black,
                     ),
                   ),
+=======
+            child: Text(
+              '인증하기',
+              style: GoogleFonts.roboto(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+>>>>>>> round_camera
           ),
         ),
         const SizedBox(width: 12),
@@ -396,7 +563,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             ],
           ),
           child: ElevatedButton(
+<<<<<<< HEAD
             onPressed: _isAuthenticating ? null : _handleRetake,
+=======
+            onPressed: _handleRetake,
+>>>>>>> round_camera
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFCADDFF),
               foregroundColor: Colors.black,
@@ -421,16 +592,26 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
 
   void _handleTakePhoto() async {
     try {
+<<<<<<< HEAD
       if (_controller != null && _isCameraReady) {
         final image = await _controller!.takePicture();
         final imageBytes = await image.readAsBytes();
         
+=======
+      if (_controller != null && _isCameraInitialized) {
+        final image = await _controller!.takePicture();
+        final imageBytes = await image.readAsBytes();
+
+>>>>>>> round_camera
         setState(() {
           _capturedImageBytes = imageBytes;
           _isPhotoCaptured = true;
         });
+<<<<<<< HEAD
         
         print('이미지 촬영 완료 - 메모리에 저장됨 (${imageBytes.length} bytes)');
+=======
+>>>>>>> round_camera
       }
     } catch (e) {
       print('사진 촬영 오류: $e');
@@ -442,6 +623,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     }
   }
 
+<<<<<<< HEAD
   void _handleAuthenticate() async {
     if (_capturedImageBytes != null && _presignedData != null) {
       setState(() {
@@ -486,6 +668,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           });
         }
       }
+=======
+  void _handleAuthenticate() {
+    if (_capturedImageBytes != null) {
+      _showAuthenticationSuccessDialog(context);
+>>>>>>> round_camera
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('먼저 사진을 촬영해주세요.')),
@@ -496,7 +683,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   void _handleRetake() {
     setState(() {
       _isPhotoCaptured = false;
+<<<<<<< HEAD
       _capturedImageBytes = null; // 메모리에서 이미지 제거
+=======
+      _capturedImageBytes = null;
+>>>>>>> round_camera
     });
   }
 
@@ -514,6 +705,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFFF0F0F4),
             borderRadius: BorderRadius.circular(5),
+<<<<<<< HEAD
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF9397B8).withOpacity(0.15),
@@ -610,6 +802,55 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                     ),
                   ],
                 ),
+=======
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4CAF50),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 25),
+              Text(
+                '얼굴 인증에 성공했습니다!',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF4B4B4B),
+                  height: 1.1,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainDashboardScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF185ABD),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                child: const Text('OK'),
+>>>>>>> round_camera
               ),
             ],
           ),
@@ -617,6 +858,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
       ),
     );
   }
+<<<<<<< HEAD
 
   void _showAuthenticationFailureDialog(BuildContext dialogContext) {
     showDialog(
@@ -730,3 +972,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     );
   }
 }
+=======
+}
+
+>>>>>>> round_camera

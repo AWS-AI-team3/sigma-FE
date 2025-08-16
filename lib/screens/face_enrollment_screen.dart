@@ -4,8 +4,11 @@ import 'package:sigma_flutter_ui/screens/login_loading_screen.dart';
 import 'package:sigma_flutter_ui/screens/login_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
+<<<<<<< HEAD
 import '../services/face_service.dart';
 import '../services/camera_manager.dart';
+=======
+>>>>>>> round_camera
 
 class FaceEnrollmentScreen extends StatefulWidget {
   const FaceEnrollmentScreen({super.key});
@@ -17,7 +20,12 @@ class FaceEnrollmentScreen extends StatefulWidget {
 class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   bool _isPhotoCaptured = false;
   CameraController? _controller;
+<<<<<<< HEAD
   bool _isCameraReady = false;
+=======
+  Future<void>? _initializeControllerFuture;
+  bool _isCameraInitialized = false;
+>>>>>>> round_camera
   Uint8List? _capturedImageBytes;
 
   @override
@@ -28,13 +36,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   @override
   void dispose() {
+<<<<<<< HEAD
     // 화면을 떠날 때 카메라 해제
     CameraManager.instance.dispose();
+=======
+    _controller?.dispose();
+>>>>>>> round_camera
     super.dispose();
   }
 
   Future<void> _initializeCamera() async {
     try {
+<<<<<<< HEAD
       _controller = await CameraManager.instance.initializeCamera();
       if (mounted && _controller != null) {
         setState(() {
@@ -48,6 +61,33 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           _isCameraReady = false;
         });
       }
+=======
+      final cameras = await availableCameras();
+      if (cameras.isNotEmpty) {
+        CameraDescription? frontCamera;
+        for (final camera in cameras) {
+          if (camera.lensDirection == CameraLensDirection.front) {
+            frontCamera = camera;
+            break;
+          }
+        }
+        final selectedCamera = frontCamera ?? cameras.first;
+        _controller = CameraController(
+          selectedCamera,
+          ResolutionPreset.medium,
+        );
+        _initializeControllerFuture = _controller!.initialize();
+        await _initializeControllerFuture;
+
+        if (mounted) {
+          setState(() {
+            _isCameraInitialized = true;
+          });
+        }
+      }
+    } catch (e) {
+      print('카메라 초기화 오류: $e');
+>>>>>>> round_camera
     }
   }
 
@@ -66,7 +106,11 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             Expanded(
               child: Column(
                 children: [
+<<<<<<< HEAD
                   _buildTitle(),
+=======
+                  _buildBannerImage(), // <-- 타이틀 배너 자리에 이미지 삽입
+>>>>>>> round_camera
                   const SizedBox(height: 30),
                   Expanded(
                     child: _buildCameraArea(),
@@ -103,8 +147,12 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           ),
           child: ElevatedButton(
             onPressed: () {
+<<<<<<< HEAD
               // 로그인 화면으로 돌아가기 (모든 이전 화면 제거)
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+=======
+              Navigator.of(context).pop();
+>>>>>>> round_camera
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
@@ -135,6 +183,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildTitle() {
     return Container(
       height: 55,
@@ -190,11 +239,22 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             ),
           ),
         ],
+=======
+  // 배너 위치에 enroll.png 이미지를 보라색 배경 위에 표시
+  Widget _buildBannerImage() {
+    return SizedBox(
+      height : 55,
+      width: double.infinity,
+      child: Image.asset(
+        'assets/images/enroll_no.png',
+        fit: BoxFit.cover,
+>>>>>>> round_camera
       ),
     );
   }
 
   Widget _buildCameraArea() {
+<<<<<<< HEAD
     return Container(
       width: 400, // 최대 너비 제한
       decoration: BoxDecoration(
@@ -223,10 +283,40 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           color: Colors.white,
         ),
         child: _buildCameraPlaceholder(),
+=======
+    return Center(
+      child: Container(
+        width: 300,
+        height: 300,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF8B5CF6),
+              Color(0xFF3B82F6),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: _buildCameraPlaceholder(),
+        ),
+>>>>>>> round_camera
       ),
     );
   }
 
+<<<<<<< HEAD
 
 Widget _buildCameraPlaceholder() {
     // 촬영된 이미지가 있으면 그것을 표시
@@ -238,6 +328,17 @@ Widget _buildCameraPlaceholder() {
           transform: Matrix4.identity()..scale(-1.0, 1.0), // 좌우 반전
           child: AspectRatio(
             aspectRatio: _controller?.value.aspectRatio ?? (4/3),
+=======
+  Widget _buildCameraPlaceholder() {
+    if (_isPhotoCaptured && _capturedImageBytes != null) {
+      return ClipOval(
+        child: SizedBox(
+          width: 280,
+          height: 280,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()..scale(-1.0, 1.0),
+>>>>>>> round_camera
             child: Image.memory(
               _capturedImageBytes!,
               fit: BoxFit.cover,
@@ -247,6 +348,7 @@ Widget _buildCameraPlaceholder() {
       );
     }
 
+<<<<<<< HEAD
     if (!_isCameraReady || _controller == null) {
       return Container(
         decoration: BoxDecoration(
@@ -270,17 +372,63 @@ Widget _buildCameraPlaceholder() {
                 ),
               ),
             ],
+=======
+    if (!_isCameraInitialized || _controller == null) {
+      return ClipOval(
+        child: Container(
+          width: 280,
+          height: 280,
+          color: const Color(0xFFF1F5F9),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+              strokeWidth: 3.0,
+            ),
+>>>>>>> round_camera
           ),
         ),
       );
     }
 
+<<<<<<< HEAD
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: AspectRatio(
         aspectRatio: _controller!.value.aspectRatio,
         child: CameraPreview(_controller!),
       ),
+=======
+    return FutureBuilder<void>(
+      future: _initializeControllerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return ClipOval(
+            child: SizedBox(
+              width: 280,
+              height: 280,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: CameraPreview(_controller!),
+              ),
+            ),
+          );
+        } else {
+          return ClipOval(
+            child: Container(
+              width: 280,
+              height: 280,
+              color: const Color(0xFFF1F5F9),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  strokeWidth: 3.0,
+                ),
+              ),
+            ),
+          );
+        }
+      },
+>>>>>>> round_camera
     );
   }
 
@@ -403,15 +551,26 @@ Widget _buildCameraPlaceholder() {
 
   void _handleTakePhoto() async {
     try {
+<<<<<<< HEAD
       if (_controller != null && _isCameraReady) {
         final image = await _controller!.takePicture();
         final imageBytes = await image.readAsBytes();
         
+=======
+      if (_controller != null && _isCameraInitialized) {
+        final image = await _controller!.takePicture();
+        final imageBytes = await image.readAsBytes();
+
+>>>>>>> round_camera
         setState(() {
           _capturedImageBytes = imageBytes;
           _isPhotoCaptured = true;
         });
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> round_camera
         print('이미지 촬영 완료 - 메모리에 저장됨 (${imageBytes.length} bytes)');
       }
     } catch (e) {
@@ -422,6 +581,7 @@ Widget _buildCameraPlaceholder() {
     }
   }
 
+<<<<<<< HEAD
   void _handleRegister() async {
     if (_capturedImageBytes != null) {
       print('등록용 이미지 준비됨 - presigned S3 업로드 시작 (${_capturedImageBytes!.length} bytes)');
@@ -464,6 +624,13 @@ Widget _buildCameraPlaceholder() {
         print('얼굴 등록 오류: $error');
         _showEnrollmentFailureDialog(context);
       }
+=======
+  void _handleRegister() {
+    if (_capturedImageBytes != null) {
+      print('등록용 이미지 준비됨 - presigned S3 업로드 예정 (${_capturedImageBytes!.length} bytes)');
+      // presigned S3 업로드 로직 추가 가능
+      _showEnrollmentSuccessDialog(context);
+>>>>>>> round_camera
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('먼저 사진을 촬영해주세요.')),
@@ -474,6 +641,7 @@ Widget _buildCameraPlaceholder() {
   void _handleRetake() {
     setState(() {
       _isPhotoCaptured = false;
+<<<<<<< HEAD
       _capturedImageBytes = null; // 메모리에서 이미지 제거
       // 카메라는 이미 초기화되어 있으므로 재초기화하지 않음
     });
@@ -598,6 +766,12 @@ Widget _buildCameraPlaceholder() {
     );
   }
 
+=======
+      _capturedImageBytes = null;
+    });
+  }
+
+>>>>>>> round_camera
   void _showEnrollmentSuccessDialog(BuildContext dialogContext) {
     showDialog(
       context: dialogContext,
@@ -718,3 +892,8 @@ Widget _buildCameraPlaceholder() {
     );
   }
 }
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> round_camera

@@ -767,6 +767,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "mediapipe" },
+<<<<<<< HEAD
     { name = "numpy" },
     { name = "opencv-python-headless" },
     { name = "pyautogui" },
@@ -774,11 +775,17 @@ dependencies = [
     { name = "pyqt6" },
     { name = "sounddevice" },
     { name = "websocket-client" },
+=======
+    { name = "opencv-python-headless" },
+    { name = "pyautogui" },
+    { name = "pyqt6" },
+>>>>>>> round_camera
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "mediapipe", specifier = "==0.10.9" },
+<<<<<<< HEAD
     { name = "numpy", specifier = ">=1.24.3" },
     { name = "opencv-python-headless", specifier = ">=4.11.0.86" },
     { name = "pyautogui", specifier = ">=0.9.54" },
@@ -786,6 +793,11 @@ requires-dist = [
     { name = "pyqt6", specifier = ">=6.9.1" },
     { name = "sounddevice", specifier = ">=0.4.6" },
     { name = "websocket-client", specifier = ">=1.6.4" },
+=======
+    { name = "opencv-python-headless", specifier = ">=4.11.0.86" },
+    { name = "pyautogui", specifier = ">=0.9.54" },
+    { name = "pyqt6", specifier = ">=6.9.1" },
+>>>>>>> round_camera
 ]
 
 [[package]]
@@ -811,6 +823,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/45/0b/bfad79af0b380aa7c0bfe73e4b03e0af45354a48ad62549489bd7696c5b0/sounddevice-0.5.2-py3-none-win32.whl", hash = "sha256:3a113ce614a2c557f14737cb20123ae6298c91fc9301eb014ada0cba6d248c5f", size = 312665, upload-time = "2025-05-16T18:12:24.726Z" },
     { url = "https://files.pythonhosted.org/packages/e1/3e/61d88e6b0a7383127cdc779195cb9d83ebcf11d39bc961de5777e457075e/sounddevice-0.5.2-py3-none-win_amd64.whl", hash = "sha256:e18944b767d2dac3771a7771bdd7ff7d3acd7d334e72c4bedab17d1aed5dbc22", size = 363808, upload-time = "2025-05-16T18:12:26Z" },
 ]
+<<<<<<< HEAD
 
 [[package]]
 name = "websocket-client"
@@ -820,3 +833,5 @@ sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf594
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826, upload-time = "2024-04-23T22:16:14.422Z" },
 ]
+=======
+>>>>>>> round_camera

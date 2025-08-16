@@ -9,8 +9,11 @@ dependencies = [
     "opencv-python-headless>=4.11.0.86",
     "pyautogui>=0.9.54",
     "pyqt6>=6.9.1",
+<<<<<<< HEAD
     "websocket-client>=1.6.4",
     "sounddevice>=0.4.6",
     "numpy>=1.24.3",
     "pyperclip>=1.8.2",
+=======
+>>>>>>> round_camera
 ]
