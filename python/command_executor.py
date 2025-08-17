@@ -5,6 +5,9 @@ Command execution module for COMMANDIFY functionality
 import subprocess
 import json
 import sys
+import platform
+import os
+from pathlib import Path
 
 class CommandExecutor:
     def __init__(self):
@@ -121,7 +124,7 @@ class CommandExecutor:
                 return False
                 
             command_message = {
-                'action': 'commandify', 
+                'action': 'generate_command', 
                 'type': 'request_command', 
                 'request': text.strip()
             }
@@ -147,3 +150,85 @@ class CommandExecutor:
         except Exception as e:
             print(f"명령어 요청 실패: {str(e)}")
             return False
+
+
+class LocalAgent:
+    """Local system information provider and command executor for Windows"""
+    
+    def __init__(self):
+        pass
+
+    def get_os_type(self):
+        """Get OS type - updated to properly identify Windows"""
+        system = platform.system().lower()
+        if system == 'windows':
+            return 'windows'
+        elif system == 'darwin':
+            return 'macos'
+        elif system == 'linux':
+            return 'linux'
+        else:
+            return 'unknown'
+
+    def get_recent_files(self):
+        """Get recent files for Windows system"""
+        try:
+            if self.get_os_type() != 'windows':
+                return "Windows만 지원됩니다."
+
+            # Windows에서 최근 파일 검색
+            recent_files = []
+            
+            # 일반적인 사용자 폴더들에서 최근 파일 검색
+            search_paths = [
+                Path.home() / "Desktop",
+                Path.home() / "Documents", 
+                Path.home() / "Downloads"
+            ]
+            
+            # 확장자별로 검색
+            extensions = ['.txt', '.doc', '.docx', '.pdf', '.xlsx', '.xls', 
+                         '.ppt', '.pptx', '.jpg', '.png', '.mp4', '.mp3']
+            
+            for search_path in search_paths:
+                if search_path.exists():
+                    for ext in extensions:
+                        try:
+                            # 각 확장자별로 파일 검색
+                            pattern = f"*{ext}"
+                            files = list(search_path.glob(pattern))
+                            
+                            # 최근 수정된 파일부터 정렬
+                            files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+                            
+                            # 상위 몇개만 추가
+                            for file in files[:2]:  # 각 확장자당 최대 2개
+                                if len(recent_files) < 10:  # 전체 최대 10개
+                                    recent_files.append(str(file))
+                        except Exception:
+                            continue
+            
+            if recent_files:
+                return '\n'.join(recent_files[:10])
+            else:
+                return "최근 파일을 찾을 수 없습니다."
+                
+        except Exception as e:
+            return f"파일 검색 오류: {str(e)}"
+
+    def execute_command(self, command):
+        """Execute system command and return result"""
+        try:
+            result = subprocess.run(
+                command, 
+                shell=True, 
+                capture_output=True, 
+                text=True, 
+                timeout=30,
+                encoding='utf-8'
+            )
+            return result.returncode == 0, result.stdout.strip(), result.stderr.strip()
+        except subprocess.TimeoutExpired:
+            return False, "", "실행 시간 초과"
+        except Exception as e:
+            return False, "", str(e)

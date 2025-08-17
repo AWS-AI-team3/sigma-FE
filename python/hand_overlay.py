@@ -16,7 +16,7 @@ import time
 from gesture_detector import GestureDetector
 from cursor_controller import CursorController
 from audio_recorder import AudioRecorder, WebSocketClient
-from command_executor import CommandExecutor
+from command_executor import CommandExecutor, LocalAgent
 
 class HandOverlay(QWidget):
     def __init__(self):
@@ -32,14 +32,16 @@ class HandOverlay(QWidget):
         self.gesture_detector = GestureDetector()
         self.cursor_controller = CursorController()
         
-        # Initialize command executor
+        # Initialize command executor and local agent
         self.command_executor = CommandExecutor()
+        self.local_agent = LocalAgent()
         
         # Initialize audio recording with command callback
         print("Initializing WebSocket client...")
         self.websocket_client = WebSocketClient(
             transcript_callback=self.update_transcript,
-            command_callback=self.handle_command_response
+            command_callback=self.handle_command_response,
+            local_agent=self.local_agent
         )
         print("Initializing audio recorder...")
         self.audio_recorder = AudioRecorder(self.websocket_client)

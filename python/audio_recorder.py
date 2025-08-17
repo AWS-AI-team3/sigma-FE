@@ -10,6 +10,7 @@ import base64
 import numpy as np
 import sounddevice as sd
 import websocket
+from command_executor import LocalAgent
 
 class AudioRecorder:
     def __init__(self, websocket_client):
@@ -33,7 +34,7 @@ class AudioRecorder:
         
         # Send start transcribe message
         self.websocket_client.send_message({
-            'action': 'transcribe', 
+            'action': 'transcribe_streaming', 
             'type': 'start_transcribe'
         })
         
@@ -68,7 +69,7 @@ class AudioRecorder:
                 # Encode and send
                 encoded_audio = base64.b64encode(audio_data).decode('utf-8')
                 self.websocket_client.send_message({
-                    'action': 'transcribe',
+                    'action': 'transcribe_streaming',
                     'type': 'send_audio',
                     'data': encoded_audio,
                 })
@@ -100,7 +101,7 @@ class AudioRecorder:
         
         # Send stop transcribe message
         self.websocket_client.send_message({
-            'action': 'transcribe', 
+            'action': 'transcribe_streaming', 
             'type': 'stop_transcribe'
         })
 
@@ -108,14 +109,33 @@ class AudioRecorder:
 class WebSocketClient:
     """WebSocket client for audio transcription and command execution"""
     
-    WEBSOCKET_URL = "wss://a0ly0pf0vc.execute-api.ap-northeast-2.amazonaws.com/dev/"
+    WEBSOCKET_URL = "wss://4tj4nr6tca.execute-api.ap-northeast-2.amazonaws.com/dev/"
+    
+    # Action constants
+    ACTION_TRANSCRIBE_STREAMING = 'transcribe_streaming'
+    ACTION_GENERATE_COMMAND = 'generate_command'
+    
+    # Type constants
+    TYPE_START_TRANSCRIBE = 'start_transcribe'
+    TYPE_STOP_TRANSCRIBE = 'stop_transcribe'
+    TYPE_SEND_AUDIO = 'send_audio'
+    TYPE_REQUEST_COMMAND = 'request_command'
+    TYPE_RESPOND_COMMAND = 'respond_command'
+    TYPE_REQUEST_INFO = 'request_info'
+    TYPE_RESPOND_INFO = 'respond_info'
+    TYPE_TRANSCRIPT = 'transcript'
+    
+    # Info constants
+    INFO_OS = 'get_os'
+    INFO_RECENT_FILES = 'get_recent_files'
 
-    def __init__(self, transcript_callback=None, command_callback=None):
+    def __init__(self, transcript_callback=None, command_callback=None, local_agent=None):
         self.websocket_connection = None
         self.is_connected = False
         self.audio_streaming = False
         self.transcript_callback = transcript_callback
         self.command_callback = command_callback
+        self.local_agent = local_agent
         self._connect()
 
     def _connect(self):
@@ -200,6 +220,31 @@ class WebSocketClient:
                         print(json_str, flush=True)
                 except Exception as e:
                     print(f"Error encoding command JSON: {e}", flush=True)
+            
+            # System info request handling
+            elif data.get('type') == self.TYPE_REQUEST_INFO:
+                if self.local_agent:
+                    info = data.get('info', '')
+                    
+                    # Handle OS info request
+                    if info == self.INFO_OS:
+                        os_info = self.local_agent.get_os_type()
+                        self.send_message({
+                            'action': self.ACTION_GENERATE_COMMAND,
+                            'type': self.TYPE_RESPOND_INFO,
+                            'info': self.INFO_OS,
+                            'data': os_info,
+                        })
+                    
+                    # Handle recent files request
+                    elif info == self.INFO_RECENT_FILES:
+                        recent_files = self.local_agent.get_recent_files()
+                        self.send_message({
+                            'action': self.ACTION_GENERATE_COMMAND,
+                            'type': self.TYPE_RESPOND_INFO,
+                            'info': self.INFO_RECENT_FILES,
+                            'data': recent_files,
+                        })
                 
         except Exception as e:
             print(f"Error handling WebSocket message: {e}")
