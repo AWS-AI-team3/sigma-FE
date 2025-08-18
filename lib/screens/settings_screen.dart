@@ -279,7 +279,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.13),
+                color: Colors.black.withValues(alpha: 0.13),
                 blurRadius: 8,
                 spreadRadius: 2,
                 offset: const Offset(0, 4),
@@ -448,12 +448,12 @@ class _CustomBackButtonState extends State<_CustomBackButton> {
         duration: const Duration(milliseconds: 200),
         height: 36,
         decoration: BoxDecoration(
-          color: const Color(0xFF6186FF).withOpacity(_isHovering ? 0.85 : 1.0),
+          color: const Color(0xFF6186FF).withValues(alpha: _isHovering ? 0.85 : 1.0),
           borderRadius: BorderRadius.circular(24),
           boxShadow: _isHovering
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     blurRadius: 5,
                     offset: const Offset(0, 4),
                   ),

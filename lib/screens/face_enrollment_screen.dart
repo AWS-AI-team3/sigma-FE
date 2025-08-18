@@ -18,8 +18,6 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   bool _isPhotoCaptured = false;
   CameraController? _controller;
   bool _isCameraReady = false;
-  Future<void>? _initializeControllerFuture;
-  bool _isCameraInitialized = false;
   Uint8List? _capturedImageBytes;
 
   @override
@@ -97,7 +95,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 8,
                 spreadRadius: 3,
                 offset: const Offset(0, 4),
@@ -167,7 +165,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 10),
@@ -238,7 +236,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 8,
               spreadRadius: 3,
               offset: const Offset(0, 4),
@@ -278,7 +276,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 8,
                 spreadRadius: 3,
                 offset: const Offset(0, 4),
@@ -314,7 +312,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 8,
                 spreadRadius: 3,
                 offset: const Offset(0, 4),
@@ -425,7 +423,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withOpacity(0.75),
+      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -437,7 +435,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             borderRadius: BorderRadius.circular(5),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF9397B8).withOpacity(0.15),
+                color: const Color(0xFF9397B8).withValues(alpha: 0.15),
                 blurRadius: 9,
                 spreadRadius: 4,
                 offset: const Offset(0, 4),
@@ -543,7 +541,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withOpacity(0.75),
+      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -555,7 +553,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
             borderRadius: BorderRadius.circular(5),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF9397B8).withOpacity(0.15),
+                color: const Color(0xFF9397B8).withValues(alpha: 0.15),
                 blurRadius: 9,
                 spreadRadius: 4,
                 offset: const Offset(0, 4),

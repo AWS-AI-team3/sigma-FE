@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
-import 'dart:typed_data';
 import '../services/face_service.dart';
 import '../services/face_auth_service.dart';
 import '../services/camera_manager.dart';

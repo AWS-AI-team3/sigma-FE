@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'face_registration_screen.dart';
-import 'face_enrollment_screen.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
 
@@ -14,7 +12,6 @@ class LoginLoadingScreen extends StatefulWidget {
 
 class LoginLoadingScreenState extends State<LoginLoadingScreen> {
   // 임시로 사용자 등록 상태를 추적하는 정적 변수
-  static bool _isUserRegistered = false;
   
   @override
   void initState() {
@@ -90,7 +87,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
   
   // 사용자 등록 완료 시 호출할 정적 메소드
   static void setUserRegistered() {
-    _isUserRegistered = true;
+    // 더 이상 사용되지 않는 메소드
   }
 
   @override
@@ -126,7 +123,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       spreadRadius: 5,
                       offset: const Offset(0, 10),

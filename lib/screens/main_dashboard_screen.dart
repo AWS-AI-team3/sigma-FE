@@ -69,13 +69,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 8,
                       spreadRadius: 3,
                       offset: const Offset(0, 4),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 3,
                       spreadRadius: 0,
                       offset: const Offset(0, 1),
@@ -96,13 +96,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               spreadRadius: 3,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 3,
                               spreadRadius: 0,
                               offset: const Offset(0, 1),
@@ -231,13 +231,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               spreadRadius: 3,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 3,
                               spreadRadius: 0,
                               offset: const Offset(0, 1),
@@ -333,13 +333,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               spreadRadius: 3,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 3,
                               spreadRadius: 0,
                               offset: const Offset(0, 1),
@@ -410,7 +410,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withOpacity(0.75),
+      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
       builder: (BuildContext dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -422,7 +422,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             borderRadius: BorderRadius.circular(5),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF9397B8).withOpacity(0.15),
+                color: const Color(0xFF9397B8).withValues(alpha: 0.15),
                 blurRadius: 9,
                 spreadRadius: 4,
                 offset: const Offset(0, 4),

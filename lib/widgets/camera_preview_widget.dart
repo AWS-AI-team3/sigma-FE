@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:typed_data';
 
 class CameraPreviewWidget extends StatelessWidget {
   final CameraController? controller;
@@ -18,16 +17,6 @@ class CameraPreviewWidget extends StatelessWidget {
     this.overlay,
   });
 
-  Future<Uint8List?> _captureImage() async {
-    if (controller == null || !controller!.value.isInitialized) return null;
-    
-    try {
-      final XFile imageFile = await controller!.takePicture();
-      return await imageFile.readAsBytes();
-    } catch (e) {
-      return null;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +36,7 @@ class CameraPreviewWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),

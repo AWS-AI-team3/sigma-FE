@@ -1,6 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(rg:*)",
+      "Bash(sed:*)",
+      "Bash(dart analyze:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "Notion"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

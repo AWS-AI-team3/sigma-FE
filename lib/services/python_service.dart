@@ -309,7 +309,7 @@ class PythonService {
       }
 
       // Start PyQt main application using uv
-      final process = await Process.start(
+      await Process.start(
         'uv', 
         ['run', 'python', pythonScriptPath],
         workingDirectory: Directory.current.path,

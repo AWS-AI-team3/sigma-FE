@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_loading_screen.dart';
-import '../services/google_auth_service.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -33,7 +32,7 @@ class LoginScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     spreadRadius: 5,
                     offset: const Offset(0, 10),
@@ -270,7 +269,7 @@ class LoginScreen extends StatelessWidget {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.grey[700],
                 elevation: 3,
-                shadowColor: Colors.black.withOpacity(0.15),
+                shadowColor: Colors.black.withValues(alpha: 0.15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                   side: BorderSide(
@@ -328,29 +327,12 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Login Failed'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 // CloseButton 클래스(원본 그대로)
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
-  const _CloseButton({super.key, required this.onTap});
+  const _CloseButton({required this.onTap});
   @override
   State<_CloseButton> createState() => _CloseButtonState();
 }
@@ -361,8 +343,8 @@ class _CloseButtonState extends State<_CloseButton> {
   Widget build(BuildContext context) {
     final Color base = const Color(0xFF3C4FE0);
     Color bg = _pressed
-        ? base.withOpacity(0.5)
-        : (_hovering ? base.withOpacity(0.8) : base);
+        ? base.withValues(alpha: 0.5)
+        : (_hovering ? base.withValues(alpha: 0.8) : base);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
@@ -385,7 +367,7 @@ class _CloseButtonState extends State<_CloseButton> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.13),
+                color: Colors.black.withValues(alpha: 0.13),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
