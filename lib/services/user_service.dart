@@ -9,9 +9,10 @@ class UserService {
     try {
       final headers = <String, String>{};
       
-      // Access Token이 있으면 Authorization 헤더 추가
-      if (AuthStorageService.hasAccessToken) {
-        headers['Authorization'] = 'Bearer ${AuthStorageService.accessToken}';
+      // 유효한 Access Token 가져오기 (자동 갱신 포함)
+      final validToken = await AuthStorageService.getValidAccessToken();
+      if (validToken != null) {
+        headers['Authorization'] = 'Bearer $validToken';
       }
       
       final response = await http.get(

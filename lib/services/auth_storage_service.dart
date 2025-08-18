@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class AuthStorageService {
   static String? _accessToken;
   static String? _refreshToken;
@@ -18,4 +21,80 @@ class AuthStorageService {
   }
 
   static bool get hasAccessToken => _accessToken != null;
+  static bool get hasRefreshToken => _refreshToken != null;
+
+  // 토큰 만료 여부 확인
+  static bool isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+      
+      final payload = json.decode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1])))
+      );
+      
+      final exp = payload['exp'] as int?;
+      if (exp == null) return true;
+      
+      final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.now().isAfter(expirationTime);
+    } catch (e) {
+      print('Error checking token expiration: $e');
+      return true;
+    }
+  }
+
+  // 토큰 재발급
+  static Future<bool> reissueToken() async {
+    if (!hasRefreshToken) {
+      print('No refresh token available');
+      return false;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://www.3-sigma-server.com/v1/auth/reissue'),
+        headers: {
+          'accept': '*/*',
+          'Authorization': 'Bearer $_accessToken',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'refreshToken': _refreshToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['sucess'] == true && data['data'] != null) {
+          final tokenData = data['data'];
+          setTokens(tokenData['accessToken'], tokenData['refreshToken']);
+          print('Token reissued successfully');
+          return true;
+        }
+      }
+      
+      print('Token reissue failed: ${response.statusCode} ${response.body}');
+      return false;
+    } catch (e) {
+      print('Token reissue error: $e');
+      return false;
+    }
+  }
+
+  // 토큰 유효성 검사 및 자동 갱신
+  static Future<String?> getValidAccessToken() async {
+    if (!hasAccessToken) return null;
+    
+    if (isTokenExpired(_accessToken!)) {
+      print('Access token expired, attempting to reissue...');
+      final success = await reissueToken();
+      if (!success) {
+        clearTokens();
+        return null;
+      }
+    }
+    
+    return _accessToken;
+  }
 }
