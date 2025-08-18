@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sigma_flutter_ui/screens/login_screen.dart';
-import 'package:sigma_flutter_ui/screens/settings_screen.dart';
-import 'package:sigma_flutter_ui/screens/tracking_screen.dart';
-import 'package:sigma_flutter_ui/screens/face_registration_screen.dart';
-import 'package:sigma_flutter_ui/services/python_service.dart';
-import 'package:sigma_flutter_ui/services/face_auth_service.dart';
-import 'package:sigma_flutter_ui/services/user_service.dart';
-import 'package:sigma_flutter_ui/services/google_auth_service.dart';
+import 'package:provider/provider.dart';
+import 'login_screen.dart';
+import 'settings_screen.dart';
+import 'tracking_screen.dart';
+import 'face_registration_screen.dart';
+import '../services/python_service.dart';
+import '../services/face_auth_service.dart';
+import '../services/user_service.dart';
+import '../services/google_auth_service.dart';
+import '../providers/settings_provider.dart';
 
 // Figma Node ID: 1-523 (메인 페이지 - 얼굴 인증 성공 후)
 class MainDashboardScreen extends StatefulWidget {
@@ -259,7 +261,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             
                             // 2. 세션 체크 성공 시 트래킹 시작
                             if (sessionResult['sucess'] == true || sessionResult['success'] == true) {
-                              final success = await PythonService.startHandTracking();
+                              // 혹시 남아있는 프로세스 정리
+                              print('Ensuring clean state before starting tracking...');
+                              await PythonService.cleanup();
+                              await Future.delayed(const Duration(milliseconds: 300));
+                              
+                              final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                              print('Starting tracking with showSkeleton: ${settingsProvider.showSkeleton}');
+                              final success = await PythonService.startHandTracking(
+                                showSkeleton: settingsProvider.showSkeleton
+                              );
                               
                               if (success) {
                                 Navigator.push(

@@ -1,16 +1,17 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:math';
 import 'auth_storage_service.dart';
+import 'env_service.dart';
+import '../constants/app_constants.dart';
+import '../utils/logger.dart';
 
 class GoogleAuthService {
-  static String get clientId => dotenv.env['GOOGLE_CLIENT_ID'] ?? 'your_google_client_id_here';
-  static String get clientSecret => dotenv.env['GOOGLE_CLIENT_SECRET'] ?? 'your_google_client_secret_here';
-  static const String redirectUri = 'http://localhost:8080/login/oauth2/code/google';
+  static String get clientId => EnvService.googleClientId;
+  static String get clientSecret => EnvService.googleClientSecret;
   static HttpServer? _callbackServer;
   static Completer<String?>? _authCompleter;
 
@@ -19,22 +20,17 @@ class GoogleAuthService {
       // 1. 브라우저에서 authorization code 받기
       final String? code = await _getAuthorizationCode();
       if (code == null) {
-        print('Failed to get authorization code');
         return null;
       }
 
       // 2. authorization code를 idToken으로 교환
       final String? idToken = await _exchangeCodeForIdToken(code);
       if (idToken == null) {
-        print('Failed to exchange code for idToken');
         return null;
       }
 
-      print('Successfully got ID token');
-      print('ID Token: $idToken');
       return idToken;
     } catch (error) {
-      print('Google Sign In Error: $error');
       return null;
     }
   }
@@ -49,7 +45,7 @@ class GoogleAuthService {
       
       final authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
           '?client_id=$clientId'
-          '&redirect_uri=$redirectUri'
+          '&redirect_uri=${AppConstants.oauthRedirectUri}'
           '&response_type=code'
           '&scope=$scope'
           '&state=$state';
@@ -65,7 +61,6 @@ class GoogleAuthService {
       // authorization code 대기
       return await _authCompleter!.future;
     } catch (error) {
-      print('Authorization Error: $error');
       await _stopCallbackServer();
       return null;
     }
@@ -76,7 +71,6 @@ class GoogleAuthService {
     
     try {
       _callbackServer = await HttpServer.bind('localhost', 8080);
-      print('Callback server started on http://localhost:8080');
       
       _callbackServer!.listen((HttpRequest request) async {
         // /login/oauth2/code/google 경로만 처리
@@ -104,10 +98,9 @@ class GoogleAuthService {
           await request.response.close();
 
           if (error != null) {
-            print('OAuth error: $error');
             _authCompleter!.complete(null);
           } else if (code != null) {
-            print('Authorization code received: $code');
+            print('✅ 인증 코드 수신');
             _authCompleter!.complete(code);
           }
           
@@ -121,7 +114,6 @@ class GoogleAuthService {
         }
       });
     } catch (e) {
-      print('Error starting callback server: $e');
       _authCompleter!.complete(null);
     }
   }
@@ -130,7 +122,6 @@ class GoogleAuthService {
     if (_callbackServer != null) {
       await _callbackServer!.close();
       _callbackServer = null;
-      print('Callback server stopped');
     }
   }
 
@@ -144,7 +135,7 @@ class GoogleAuthService {
           'client_secret': clientSecret,
           'code': code,
           'grant_type': 'authorization_code',
-          'redirect_uri': redirectUri,
+          'redirect_uri': AppConstants.oauthRedirectUri,
         },
       );
 
@@ -152,11 +143,10 @@ class GoogleAuthService {
         final data = json.decode(response.body);
         return data['id_token']; // idToken 반환
       } else {
-        print('Token exchange error: ${response.statusCode} ${response.body}');
+        Logger.error('토큰 교환 실패: ${response.statusCode}', 'AUTH');
         return null;
       }
     } catch (error) {
-      print('Token exchange error: $error');
       return null;
     }
   }
@@ -171,9 +161,7 @@ class GoogleAuthService {
 
   static Future<void> signOut() async {
     try {
-      print('Signed out successfully');
     } catch (error) {
-      print('Google Sign Out Error: $error');
     }
   }
 
@@ -194,49 +182,26 @@ class GoogleAuthService {
         final data = json.decode(response.body);
         return data;
       } else {
-        print('Server auth error: ${response.statusCode} ${response.body}');
+        print('❌ 서버 인증 실패: ${response.statusCode}');
         return null;
       }
     } catch (error) {
-      print('Network error: $error');
       return null;
     }
   }
 
   static Future<bool> logout() async {
-    try {
-      final headers = <String, String>{};
-      
-      // 유효한 Access Token 가져오기 (자동 갱신 포함)
-      final validToken = await AuthStorageService.getValidAccessToken();
-      if (validToken != null) {
-        headers['Authorization'] = 'Bearer $validToken';
-      }
-      
-      final response = await http.post(
-        Uri.parse('https://www.3-sigma-server.com/v1/auth/logout'),
-        headers: headers,
-        body: '', // 빈 body로 요청
-      );
-
-      print('Logout response: ${response.statusCode} ${response.body}');
-
-      if (response.statusCode == 200) {
-        // 로그아웃 성공 시 로컬 토큰 삭제
-        AuthStorageService.clearTokens();
-        return true;
-      } else {
-        print('Logout error: ${response.statusCode} ${response.body}');
-        // 서버 로그아웃 실패해도 로컬 토큰은 삭제
-        AuthStorageService.clearTokens();
-        return false;
-      }
-    } catch (error) {
-      print('Logout network error: $error');
-      // 네트워크 오류라도 로컬 토큰은 삭제
-      AuthStorageService.clearTokens();
-      return false;
-    }
+    final result = await http.post(
+      Uri.parse('https://www.3-sigma-server.com/v1/auth/logout'),
+      headers: {
+        'Authorization': 'Bearer ${await AuthStorageService.getValidAccessToken() ?? ''}',
+      },
+      body: '',
+    );
+    
+    // 결과에 관계없이 로컬 토큰 삭제
+    AuthStorageService.clearTokens();
+    return result.statusCode == 200;
   }
 
   static Future<Map<String, dynamic>?> signInWithGoogle() async {
@@ -250,11 +215,9 @@ class GoogleAuthService {
         };
       }
 
-      print('Sending ID Token to server...');
       final Map<String, dynamic>? serverResponse = await _sendIdTokenToServer(idToken);
       
       if (serverResponse != null) {
-        print('Server Response: $serverResponse');
       }
       
       if (serverResponse != null && serverResponse['sucess'] == true) {

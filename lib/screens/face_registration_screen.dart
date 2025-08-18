@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sigma_flutter_ui/screens/main_dashboard_screen.dart';
+import 'main_dashboard_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
-import 'package:sigma_flutter_ui/services/camera_manager.dart';
-import 'package:sigma_flutter_ui/services/face_auth_service.dart';
+import '../services/camera_manager.dart';
+import '../services/face_auth_service.dart';
 
 class FaceRegistrationScreen extends StatefulWidget {
   const FaceRegistrationScreen({super.key});

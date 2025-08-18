@@ -9,7 +9,7 @@ import sys
 from typing import Optional, Dict
 
 class GestureDetector:
-    def __init__(self):
+    def __init__(self, motion_mapping=None):
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
@@ -21,6 +21,13 @@ class GestureDetector:
         # Thresholds
         self.pinch_threshold = 0.06
         self.scroll_threshold = 0.08  # Larger threshold for scroll
+        
+        # Motion mapping configuration
+        self.motion_mapping = motion_mapping or {
+            'left_click': 'M1',      # Default: 엄지+검지 핀치
+            'right_click': 'M2',     # Default: 엄지+중지 핀치  
+            'paste': 'M3',           # Default: 엄지+새끼 핀치
+        }
         
         # Scroll state tracking
         self.is_scrolling = False
@@ -72,7 +79,7 @@ class GestureDetector:
         }
     
     def _classify_gesture(self, positions):
-        """Classify gesture based on landmarks"""
+        """Classify gesture based on landmarks and motion mapping configuration"""
         # Landmark indices
         THUMB_TIP = 4
         THUMB_IP = 3
@@ -89,36 +96,39 @@ class GestureDetector:
         thumb_tip = positions[THUMB_TIP]
         index_tip = positions[INDEX_TIP]
         middle_tip = positions[MIDDLE_TIP]
-        
-        # Count extended fingers first
-        fingers_up = 0
-        finger_tips = [THUMB_TIP, INDEX_TIP, MIDDLE_TIP, RING_TIP, PINKY_TIP]
-        finger_pips = [THUMB_IP, INDEX_PIP, MIDDLE_PIP, RING_PIP, PINKY_PIP]
-        
-        for i in range(5):
-            if i == 0:  # Thumb - different logic
-                # For thumb, check if tip is to the right/left of IP (depending on hand)
-                tip_x = float(positions[finger_tips[i]][0])
-                pip_x = float(positions[finger_pips[i]][0])
-                if abs(tip_x - pip_x) > 0.04:  # Thumb extended
-                    fingers_up += 1
-            else:  # Other fingers - check Y position
-                tip_y = float(positions[finger_tips[i]][1])
-                pip_y = float(positions[finger_pips[i]][1])
-                if tip_y < pip_y:  # Finger tip above PIP
-                    fingers_up += 1
-        
-        # Check for thumb-ring pinch gesture (for recording) - but don't return yet
         ring_tip = positions[RING_TIP]
-        thumb_ring_distance = np.sqrt(np.sum((thumb_tip - ring_tip) ** 2))
-        
-        # Check for thumb-pinky pinch gesture (for paste)
         pinky_tip = positions[PINKY_TIP]
+        
+        # Calculate distances for all possible pinch gestures
+        thumb_index_distance = np.sqrt(np.sum((thumb_tip - index_tip) ** 2))
+        thumb_middle_distance = np.sqrt(np.sum((thumb_tip - middle_tip) ** 2))
+        thumb_ring_distance = np.sqrt(np.sum((thumb_tip - ring_tip) ** 2))
         thumb_pinky_distance = np.sqrt(np.sum((thumb_tip - pinky_tip) ** 2))
         
-        # Use same threshold as left/right click
+        # Map motion codes to gesture distances and types
+        gesture_distances = {
+            'M1': ('thumb_index', thumb_index_distance),
+            'M2': ('thumb_middle', thumb_middle_distance), 
+            'M3': ('thumb_pinky', thumb_pinky_distance),
+        }
+        
+        # Determine which gestures are active based on motion mapping
+        left_click_motion = self.motion_mapping.get('left_click', 'M1')
+        right_click_motion = self.motion_mapping.get('right_click', 'M2')
+        paste_motion = self.motion_mapping.get('paste', 'M3')
+        
+        # Get distances for configured gestures
+        left_click_gesture, left_click_distance = gesture_distances.get(left_click_motion, ('thumb_index', thumb_index_distance))
+        right_click_gesture, right_click_distance = gesture_distances.get(right_click_motion, ('thumb_middle', thumb_middle_distance))
+        paste_gesture, paste_distance = gesture_distances.get(paste_motion, ('thumb_pinky', thumb_pinky_distance))
+        
+        # Check active gestures
+        is_left_click_gesture = left_click_distance < self.pinch_threshold
+        is_right_click_gesture = right_click_distance < self.pinch_threshold
+        is_paste_gesture = paste_distance < self.pinch_threshold
+        
+        # Fixed recording gesture (always thumb-ring for now)
         is_recording_gesture = thumb_ring_distance < self.pinch_threshold
-        is_paste_gesture = thumb_pinky_distance < self.pinch_threshold
         
         
         # Handle recording state but continue processing other gestures
@@ -144,32 +154,28 @@ class GestureDetector:
                 recording_gesture = "recording_stop"
         
         # Handle paste gesture
-        paste_gesture = None
+        paste_gesture_result = None
         if is_paste_gesture:
-            # Reset scroll state when making thumb-pinky pinch
+            # Reset scroll state when making paste pinch
             if self.is_scrolling:
                 self.is_scrolling = False
                 self.scroll_start_pos = None
             
             if not self.is_pasting:
-                # First time making thumb-pinky pinch - trigger paste
+                # First time making paste pinch - trigger paste
                 self.is_pasting = True
-                paste_gesture = "paste_start"
+                paste_gesture_result = "paste_start"
             else:
-                # Continue holding thumb-pinky pinch
-                paste_gesture = "paste_hold"
+                # Continue holding paste pinch
+                paste_gesture_result = "paste_hold"
         else:
-            # Not making thumb-pinky pinch
+            # Not making paste pinch
             if self.is_pasting:
-                # Just stopped thumb-pinky pinch
+                # Just stopped paste pinch
                 self.is_pasting = False
-                paste_gesture = "paste_end"
+                paste_gesture_result = "paste_end"
         
-        # Calculate distances for gesture detection
-        thumb_index_distance = np.sqrt(np.sum((thumb_tip - index_tip) ** 2))
-        thumb_middle_distance = np.sqrt(np.sum((thumb_tip - middle_tip) ** 2))
-        
-        # Check for 3-finger scroll (when 2-3 fingers are up and close together)
+        # Check for 3-finger scroll (when thumb, index, and middle are close together)
         if (thumb_index_distance < self.scroll_threshold and 
             thumb_middle_distance < self.scroll_threshold):
             return self._handle_scroll(positions)
@@ -180,15 +186,15 @@ class GestureDetector:
             self.scroll_start_pos = None
         
         # Return paste gesture first if active (highest priority)
-        if paste_gesture:
-            return paste_gesture
+        if paste_gesture_result:
+            return paste_gesture_result
             
         # Return recording gesture if active (second priority)
         if recording_gesture:
             return recording_gesture
         
-        # Check for individual pinch gestures with hold state
-        if thumb_index_distance < self.pinch_threshold:
+        # Check for left click gesture with hold state
+        if is_left_click_gesture:
             if not self.is_left_clicking:
                 self.is_left_clicking = True
                 return "left_click_start"
@@ -199,7 +205,8 @@ class GestureDetector:
                 self.is_left_clicking = False
                 return "left_click_end"
         
-        if thumb_middle_distance < self.pinch_threshold:
+        # Check for right click gesture with hold state
+        if is_right_click_gesture:
             if not self.is_right_clicking:
                 self.is_right_clicking = True
                 return "right_click_start"
@@ -244,6 +251,11 @@ class GestureDetector:
                 return f"scroll:{scroll_speed}"
             else:
                 return "scroll_hold"
+    
+    def update_motion_mapping(self, motion_mapping: Dict[str, str]):
+        """Update motion mapping configuration"""
+        self.motion_mapping = motion_mapping
+        print(f"Updated motion mapping: {motion_mapping}")
     
     def cleanup(self):
         """Clean up resources"""

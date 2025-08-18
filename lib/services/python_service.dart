@@ -2,20 +2,25 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
+import 'auth_storage_service.dart';
 
 class PythonService {
   static Process? _handTrackingProcess;
   static bool _isTracking = false;
   static int? _pythonProcessId;
-  static final StreamController<Uint8List> _cameraStreamController = StreamController<Uint8List>.broadcast();
-  static final StreamController<String> _gestureStreamController = StreamController<String>.broadcast();
-  static final StreamController<Map<String, dynamic>> _transcriptStreamController = StreamController<Map<String, dynamic>>.broadcast();
-  static final StreamController<Map<String, dynamic>> _commandStreamController = StreamController<Map<String, dynamic>>.broadcast();
+  static StreamController<Uint8List> _cameraStreamController = StreamController<Uint8List>.broadcast();
+  static StreamController<String> _gestureStreamController = StreamController<String>.broadcast();
+  static StreamController<Map<String, dynamic>> _transcriptStreamController = StreamController<Map<String, dynamic>>.broadcast();
+  static StreamController<Map<String, dynamic>> _commandStreamController = StreamController<Map<String, dynamic>>.broadcast();
 
   /// Start hand tracking using Python overlay
-  static Future<bool> startHandTracking() async {
+  static Future<bool> startHandTracking({bool showSkeleton = false}) async {
+    // 이미 실행 중인 경우 먼저 정리
     if (_isTracking) {
-      return true;
+      print('Python process already running, cleaning up first...');
+      await cleanup();
+      // 약간의 대기 시간으로 완전한 정리를 보장
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     try {
@@ -31,10 +36,27 @@ class PythonService {
         return false;
       }
 
+      // Get access token for motion settings
+      final accessToken = await AuthStorageService.getValidAccessToken();
+      
+      // Build command arguments
+      final args = [
+        'run', 'python', '-u', pythonScriptPath, 
+        '--show-skeleton', showSkeleton.toString()
+      ];
+      
+      // Add access token if available
+      if (accessToken != null) {
+        args.addAll(['--access-token', accessToken]);
+        print('Starting Python with access token for motion settings');
+      } else {
+        print('No access token available, using default motion mapping');
+      }
+
       // Start Python process with hand tracking overlay using uv
       _handTrackingProcess = await Process.start(
         'uv', 
-        ['run', 'python', '-u', pythonScriptPath],  // -u flag for unbuffered output
+        args,  // -u flag for unbuffered output
         workingDirectory: Directory.current.path,
         mode: ProcessStartMode.normal,
         environment: {
@@ -193,21 +215,31 @@ class PythonService {
       }
     }
     
-    // Close the stream controllers
-    if (!_cameraStreamController.isClosed) {
-      await _cameraStreamController.close();
-    }
-    if (!_gestureStreamController.isClosed) {
-      await _gestureStreamController.close();
-    }
-    if (!_transcriptStreamController.isClosed) {
-      await _transcriptStreamController.close();
-    }
-    if (!_commandStreamController.isClosed) {
-      await _commandStreamController.close();
+    // Close and recreate stream controllers for fresh start
+    try {
+      if (!_cameraStreamController.isClosed) {
+        await _cameraStreamController.close();
+      }
+      if (!_gestureStreamController.isClosed) {
+        await _gestureStreamController.close();
+      }
+      if (!_transcriptStreamController.isClosed) {
+        await _transcriptStreamController.close();
+      }
+      if (!_commandStreamController.isClosed) {
+        await _commandStreamController.close();
+      }
+    } catch (e) {
+      print('Error closing stream controllers: $e');
     }
     
-    print('Python service cleanup completed');
+    // Recreate stream controllers for fresh start
+    _cameraStreamController = StreamController<Uint8List>.broadcast();
+    _gestureStreamController = StreamController<String>.broadcast();
+    _transcriptStreamController = StreamController<Map<String, dynamic>>.broadcast();
+    _commandStreamController = StreamController<Map<String, dynamic>>.broadcast();
+    
+    print('Python service cleanup completed and stream controllers recreated');
   }
 
   /// Check if hand tracking is currently active
@@ -241,6 +273,25 @@ class PythonService {
       }
     } else {
       print('Cannot send command: Python process not running');
+    }
+  }
+
+  /// Update skeleton display setting
+  static void updateSkeletonDisplay(bool showSkeleton) {
+    if (_handTrackingProcess != null && _isTracking) {
+      try {
+        final commandData = {
+          'type': 'update_skeleton_display',
+          'show_skeleton': showSkeleton,
+        };
+        final jsonCommand = json.encode(commandData);
+        _handTrackingProcess!.stdin.writeln(jsonCommand);
+        print('Updated skeleton display: $showSkeleton');
+      } catch (e) {
+        print('Error updating skeleton display: $e');
+      }
+    } else {
+      print('Cannot update skeleton display: Python process not running');
     }
   }
 

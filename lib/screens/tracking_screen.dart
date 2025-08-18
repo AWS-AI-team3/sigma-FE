@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sigma_flutter_ui/services/python_service.dart';
-import 'package:sigma_flutter_ui/services/user_service.dart';
+import 'package:provider/provider.dart';
+import '../services/python_service.dart';
+import '../services/user_service.dart';
+import '../providers/settings_provider.dart';
 import 'dart:typed_data';
 import 'dart:async';
 
@@ -35,10 +37,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void initState() {
     super.initState();
     _loadUserInfo();
+    _loadMotionSettings();
     _initializeServices();
     _startGestureListening();
     _startTranscriptListening();
     _startCommandListening();
+  }
+
+  Future<void> _loadMotionSettings() async {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    await settingsProvider.loadMotionSettingsFromServer();
   }
 
   Future<void> _loadUserInfo() async {
@@ -60,7 +68,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   @override
-  void dispose() async {
+  void dispose() {
     // Stop subscriptions
     _gestureSubscription?.cancel();
     _transcriptSubscription?.cancel();
@@ -68,11 +76,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
     
     // Stop Python processes when leaving the tracking screen
     print('TrackingScreen dispose: cleaning up Python processes...');
-    try {
-      await PythonService.cleanup();
-    } catch (e) {
-      print('Error during cleanup: $e');
-    }
     
     super.dispose();
   }

@@ -19,17 +19,19 @@ from audio_recorder import AudioRecorder, WebSocketClient
 from command_executor import CommandExecutor, LocalAgent
 
 class HandOverlay(QWidget):
-    def __init__(self):
+    def __init__(self, show_skeleton=False, motion_mapping=None):
         super().__init__()
-        print("HandOverlay initializing...")
+        print(f"HandOverlay initializing with skeleton display: {show_skeleton}")
+        print(f"HandOverlay initializing with motion mapping: {motion_mapping}")
         self.landmarks = None
         self.gesture = None
+        self.show_skeleton = show_skeleton
         
         # Setup window
         self.setup_window()
         
-        # Initialize components
-        self.gesture_detector = GestureDetector()
+        # Initialize components with motion mapping
+        self.gesture_detector = GestureDetector(motion_mapping=motion_mapping)
         self.cursor_controller = CursorController()
         
         # Initialize command executor and local agent
@@ -394,15 +396,32 @@ class HandOverlay(QWidget):
                 # Manual recording stop via mic button
                 print("Manual recording stop requested")
                 self.handle_audio_recording("recording_stop")
+            elif command_type == 'update_skeleton_display':
+                # Update skeleton display setting
+                show_skeleton = data.get("show_skeleton", False)
+                print(f"Received skeleton display update: {show_skeleton}")
+                self.update_skeleton_display(show_skeleton)
                 
         except json.JSONDecodeError:
             pass
         except Exception as e:
             print(f"Error handling Flutter command: {e}")
     
+    def update_skeleton_display(self, show_skeleton):
+        """Update skeleton display setting"""
+        print(f"Updating skeleton display to: {show_skeleton}")
+        self.show_skeleton = show_skeleton
+        self.update()  # Trigger repaint
+    
+    def update_motion_mapping(self, motion_mapping):
+        """Update motion mapping configuration"""
+        print(f"Updating motion mapping: {motion_mapping}")
+        if self.gesture_detector:
+            self.gesture_detector.update_motion_mapping(motion_mapping)
+    
     def paintEvent(self, event):
         """Draw hand landmarks"""
-        if not self.landmarks:
+        if not self.landmarks or not self.show_skeleton:
             return
             
         painter = QPainter(self)
@@ -420,29 +439,49 @@ class HandOverlay(QWidget):
                 x = int(self.landmarks[idx][0] * screen_width)
                 y = int(self.landmarks[idx][1] * screen_height)
                 
-                # Choose color based on gesture
-                if (self.gesture and 
-                    (self.gesture.startswith("left_click") or self.gesture == "left_click") and idx == 8):
-                    color = QColor(0, 255, 0, 255)  # Green for left click
-                elif (self.gesture and 
-                      (self.gesture.startswith("right_click") or self.gesture == "right_click") and idx == 12):
-                    color = QColor(255, 100, 0, 255)  # Orange for right click
-                elif (self.gesture and 
-                      (self.gesture.startswith("recording") or self.gesture in ["recording_start", "recording_hold"]) and idx == 16):
-                    color = QColor(255, 255, 0, 255)  # Yellow for recording (ring finger)
-                elif (self.gesture and 
-                      (self.gesture.startswith("scroll") or self.gesture == "scroll_start" or self.gesture == "scroll_hold") and idx in [8, 12]):
-                    color = QColor(255, 0, 255, 255)  # Magenta for scroll gestures (only index and middle)
-                elif (self.gesture and 
-                      (self.gesture.startswith("paste") or self.gesture in ["paste_start", "paste_hold"]) and idx == 20):
-                    color = QColor(0, 255, 255, 255)  # Cyan for paste gesture (pinky finger)
-                else:
-                    color = QColor(128, 128, 128, 200)  # Gray default
+                # Choose color based on gesture and dynamic mapping
+                color = self._get_fingertip_color(idx)
                 
                 pen = QPen(color)
                 pen.setWidth(10)
                 painter.setPen(pen)
                 painter.drawPoint(x, y)
+                
+    def _get_fingertip_color(self, fingertip_idx):
+        """Get color for fingertip based on current gesture and motion mapping"""
+        if not self.gesture:
+            return QColor(128, 128, 128, 200)  # Gray default
+        
+        # Get current motion mapping from gesture detector
+        motion_mapping = getattr(self.gesture_detector, 'motion_mapping', {
+            'left_click': 'M1', 'right_click': 'M2', 'paste': 'M3'
+        })
+        
+        # Map motion codes to fingertip indices
+        motion_to_fingertip = {
+            'M1': 8,   # Index finger
+            'M2': 12,  # Middle finger  
+            'M3': 20,  # Pinky finger
+        }
+        
+        # Get fingertip indices for each action based on current mapping
+        left_click_fingertip = motion_to_fingertip.get(motion_mapping.get('left_click', 'M1'), 8)
+        right_click_fingertip = motion_to_fingertip.get(motion_mapping.get('right_click', 'M2'), 12)
+        paste_fingertip = motion_to_fingertip.get(motion_mapping.get('paste', 'M3'), 20)
+        
+        # Apply colors based on current gesture and corresponding fingertip
+        if (self.gesture.startswith("left_click") or self.gesture == "left_click") and fingertip_idx == left_click_fingertip:
+            return QColor(0, 255, 0, 255)  # Green for left click
+        elif (self.gesture.startswith("right_click") or self.gesture == "right_click") and fingertip_idx == right_click_fingertip:
+            return QColor(255, 100, 0, 255)  # Orange for right click
+        elif (self.gesture.startswith("paste") or self.gesture in ["paste_start", "paste_hold"]) and fingertip_idx == paste_fingertip:
+            return QColor(0, 255, 255, 255)  # Cyan for paste gesture
+        elif (self.gesture.startswith("recording") or self.gesture in ["recording_start", "recording_hold"]) and fingertip_idx == 16:
+            return QColor(255, 255, 0, 255)  # Yellow for recording (always ring finger)
+        elif (self.gesture.startswith("scroll") or self.gesture == "scroll_start" or self.gesture == "scroll_hold") and fingertip_idx in [8, 12]:
+            return QColor(255, 0, 255, 255)  # Magenta for scroll gestures (always index and middle)
+        else:
+            return QColor(128, 128, 128, 200)  # Gray default
     
     def closeEvent(self, event):
         """Clean up on close"""

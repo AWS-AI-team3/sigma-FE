@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sigma_flutter_ui/screens/login_loading_screen.dart';
-import 'package:sigma_flutter_ui/screens/login_screen.dart';
+import 'login_loading_screen.dart';
+import 'login_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
 import '../services/face_service.dart';

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dotted_line/dotted_line.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 void main() {
   runApp(const MaterialApp(home: SettingsScreen()));
@@ -15,27 +17,26 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final List<String> gestureOptions = [
     '엄지와 검지를',
-    '오른손을 모두 펴고',
-    '왼손 전체 펴기',
-    '엄지 접기',
-    '새끼 손가락 접기',
+    '엄지와 중지를',
+    '엄지와 새끼를',
     '선택 안함',
   ];
-
-  String _leftClickValue = '선택 안함';
-  String _rightClickValue = '선택 안함';
-  String _wheelScrollValue = '선택 안함';
-  String _recordStartValue = '선택 안함';
-  String _recordStopValue = '선택 안함';
-
-  bool _showMouseCursor = true;
-  bool _showSkeleton = false;
-  bool _useLeftHand = true;
 
   static const double labelWidth = 70;
 
   //  현재 클릭된 드롭다운 라벨 저장
   String? _activeDropdownLabel;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // 설정 화면이 로드될 때 서버에서 모션 설정 불러오기
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      settingsProvider.loadMotionSettingsFromServer();
+    });
+  }
 
   Color getDropdownColor(String value, {bool isActive = false}) {
     if (isActive) return const Color.fromARGB(255, 196, 148, 223); // 활성 시 주황색
@@ -44,13 +45,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         : const Color(0xFF7DAEF3);
   }
 
-  void _saveSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('설정이 저장되었습니다'),
-        backgroundColor: Color(0xFF6186FF),
+  Future<void> _saveSettings() async {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    
+    // 로딩 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+    
+    try {
+      await settingsProvider.saveAllSettings();
+      
+      // 로딩 창 닫기
+      if (mounted) Navigator.pop(context);
+      
+      // 성공 메시지
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('설정이 저장되었습니다'),
+            backgroundColor: Color(0xFF6186FF),
+          ),
+        );
+      }
+    } catch (e) {
+      // 로딩 창 닫기
+      if (mounted) Navigator.pop(context);
+      
+      // 에러 메시지
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('설정 저장에 실패했습니다'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showCustomDropdownMenu(
@@ -228,6 +263,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         (MediaQuery.of(context).size.width * 0.96).clamp(380.0, 820.0);
     final containerHeight =
         (MediaQuery.of(context).size.height * 0.88).clamp(480.0, 720.0);
+    
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
 
     return Scaffold(
       backgroundColor: const Color(0xFFE5E5E5),
@@ -299,21 +337,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: _buildCapsuleHeaderImage('assets/images/hand_no.png'),
                             ),
                             const SizedBox(height: 20),
-                            _buildGestureDropdown(context, '좌클릭', _leftClickValue,
-                                (v) => setState(() => _leftClickValue = v)),
+                            _buildGestureDropdown(context, '좌클릭', settingsProvider.leftClickValue,
+                                (v) => settingsProvider.setLeftClickValue(v)),
                             const SizedBox(height: 15),
-                            _buildGestureDropdown(context, '우클릭', _rightClickValue,
-                                (v) => setState(() => _rightClickValue = v)),
+                            _buildGestureDropdown(context, '우클릭', settingsProvider.rightClickValue,
+                                (v) => settingsProvider.setRightClickValue(v)),
                             const SizedBox(height: 15),
-                            _buildGestureDropdown(context, '휠스크롤', _wheelScrollValue,
-                                (v) => setState(() => _wheelScrollValue = v)),
-                            const SizedBox(height: 15),
-                            _buildGestureDropdown(context, '녹음 시작', _recordStartValue,
-                                (v) => setState(() => _recordStartValue = v)),
-                            const SizedBox(height: 15),
-                            _buildGestureDropdown(context, '녹음 중지', _recordStopValue,
-                                (v) => setState(() => _recordStopValue = v)),
-                            const Spacer(),
+                            _buildGestureDropdown(context, '붙여넣기', settingsProvider.wheelScrollValue,
+                                (v) => settingsProvider.setWheelScrollValue(v)),
                           ],
                         ),
                       ),
@@ -340,12 +371,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: _buildCapsuleHeaderImage('assets/images/screen_no.png'),
                             ),
                             const SizedBox(height: 22),
-                            _buildToggleRow('마우스 커서 표시', _showMouseCursor,
-                                (v) => setState(() => _showMouseCursor = v)),
-                            _buildToggleRow('왼손 사용', _useLeftHand,
-                                (v) => setState(() => _useLeftHand = v)),
-                            _buildToggleRow('스켈레톤 표시', _showSkeleton,
-                                (v) => setState(() => _showSkeleton = v)),
+                            _buildToggleRow('스켈레톤 표시', settingsProvider.showSkeleton,
+                                (v) => settingsProvider.setShowSkeleton(v)),
                             const Spacer(),
                           ],
                         ),
@@ -386,6 +413,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

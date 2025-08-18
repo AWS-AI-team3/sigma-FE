@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'routes/app_routes.dart';
 import 'services/python_service.dart';
+import 'services/env_service.dart';
+import 'constants/app_constants.dart';
+import 'themes/app_theme.dart';
+import 'utils/logger.dart';
+import 'providers/auth_provider.dart';
+import 'providers/face_provider.dart';
+import 'providers/settings_provider.dart';
 import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // .env 파일 로드
-  await dotenv.load(fileName: '.env');
+  // 환경 변수 로드
+  await EnvService.load();
+  
+  // 환경 변수 검증
+  if (!EnvService.isConfigured) {
+    print('Warning: Environment variables not properly configured. Please check .env file.');
+  }
   
   await windowManager.ensureInitialized();
   
@@ -51,13 +62,13 @@ class AppWindowListener with WindowListener {
         await Process.run('taskkill', ['/F', '/IM', 'python.exe'], runInShell: true);
         await Process.run('taskkill', ['/F', '/IM', 'pythonw.exe'], runInShell: true);
       } catch (e) {
-        print('Error killing Python processes: $e');
+        Logger.error('Error killing Python processes', 'MAIN', e);
       }
     } else {
       try {
         await Process.run('pkill', ['-f', 'python'], runInShell: true);
       } catch (e) {
-        print('Error killing Python processes: $e');
+        Logger.error('Error killing Python processes', 'MAIN', e);
       }
     }
     
@@ -113,20 +124,20 @@ class _SigmaAppState extends State<SigmaApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SIGMA - Smart Interactive Gesture Management Assistant',
-      theme: ThemeData(
-        fontFamily: GoogleFonts.roboto().fontFamily,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1), // 앱 메인 컬러
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFE5E5E5),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => FaceProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+      ],
+      child: MaterialApp(
+        title: AppConstants.appTitle,
+        theme: AppTheme.lightTheme,
+        initialRoute: AppRoutes.login,
+        routes: AppRoutes.routes,
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+        debugShowCheckedModeBanner: false,
       ),
-      initialRoute: AppRoutes.login,
-      routes: AppRoutes.routes,
-      onGenerateRoute: AppRoutes.onGenerateRoute,
-      debugShowCheckedModeBanner: false,
     );
   }
 }

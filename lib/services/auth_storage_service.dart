@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../constants/app_constants.dart';
+import '../utils/logger.dart';
 
 class AuthStorageService {
   static String? _accessToken;
@@ -8,7 +10,6 @@ class AuthStorageService {
   static void setTokens(String accessToken, String refreshToken) {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
-    print('Tokens saved - Access: ${accessToken.substring(0, 20)}...');
   }
 
   static String? get accessToken => _accessToken;
@@ -17,7 +18,6 @@ class AuthStorageService {
   static void clearTokens() {
     _accessToken = null;
     _refreshToken = null;
-    print('Tokens cleared');
   }
 
   static bool get hasAccessToken => _accessToken != null;
@@ -39,7 +39,6 @@ class AuthStorageService {
       final expirationTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       return DateTime.now().isAfter(expirationTime);
     } catch (e) {
-      print('Error checking token expiration: $e');
       return true;
     }
   }
@@ -47,17 +46,16 @@ class AuthStorageService {
   // 토큰 재발급
   static Future<bool> reissueToken() async {
     if (!hasRefreshToken) {
-      print('No refresh token available');
       return false;
     }
 
     try {
       final response = await http.post(
-        Uri.parse('https://www.3-sigma-server.com/v1/auth/reissue'),
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.authReissue}'),
         headers: {
-          'accept': '*/*',
-          'Authorization': 'Bearer $_accessToken',
-          'Content-Type': 'application/json',
+          AppConstants.headerAccept: '*/*',
+          AppConstants.headerAuthorization: 'Bearer $_accessToken',
+          AppConstants.headerContentType: AppConstants.contentTypeJson,
         },
         body: json.encode({
           'refreshToken': _refreshToken,
@@ -69,15 +67,12 @@ class AuthStorageService {
         if (data['sucess'] == true && data['data'] != null) {
           final tokenData = data['data'];
           setTokens(tokenData['accessToken'], tokenData['refreshToken']);
-          print('Token reissued successfully');
           return true;
         }
       }
       
-      print('Token reissue failed: ${response.statusCode} ${response.body}');
       return false;
     } catch (e) {
-      print('Token reissue error: $e');
       return false;
     }
   }
@@ -87,7 +82,7 @@ class AuthStorageService {
     if (!hasAccessToken) return null;
     
     if (isTokenExpired(_accessToken!)) {
-      print('Access token expired, attempting to reissue...');
+      AuthLogger.token('토큰 갱신 중...');
       final success = await reissueToken();
       if (!success) {
         clearTokens();
