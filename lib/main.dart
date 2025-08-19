@@ -26,8 +26,8 @@ void main() async {
   await windowManager.ensureInitialized();
   
   
-  const double windowWidth = 480;
-  const double windowHeight = 650;
+  const double windowWidth = 1194;
+  const double windowHeight = 834;
   
   WindowOptions windowOptions = const WindowOptions(
     size: Size(windowWidth, windowHeight),

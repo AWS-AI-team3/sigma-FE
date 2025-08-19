@@ -39,6 +39,9 @@ dependencies:
   
   # 상태 관리
   provider: ^6.1.1
+  
+  # SVG 지원
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:
@@ -51,3 +54,25 @@ flutter:
   assets:
     - assets/images/
     - .env
+  
+  fonts:
+    - family: AppleSDGothicNeo
+      fonts:
+        - asset: assets/fonts/AppleSDGothicNeoB.ttf
+          weight: 700
+        - asset: assets/fonts/AppleSDGothicNeoEB.ttf
+          weight: 800
+        - asset: assets/fonts/AppleSDGothicNeoH.ttf
+          weight: 900
+        - asset: assets/fonts/AppleSDGothicNeoL.ttf
+          weight: 300
+        - asset: assets/fonts/AppleSDGothicNeoM.ttf
+          weight: 500
+        - asset: assets/fonts/AppleSDGothicNeoR.ttf
+          weight: 400
+        - asset: assets/fonts/AppleSDGothicNeoSB.ttf
+          weight: 600
+        - asset: assets/fonts/AppleSDGothicNeoT.ttf
+          weight: 100
+        - asset: assets/fonts/AppleSDGothicNeoUL.ttf
+          weight: 200

@@ -56,211 +56,175 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 40),
-            Expanded(
-              child: Column(
+      body: Stack(
+        children: [
+          // Back button and arrow
+          Positioned(
+            top: 55,
+            left: 55,
+            child: GestureDetector(
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildBannerImage(), // <-- 타이틀 배너 자리에 이미지 삽입
-                  const SizedBox(height: 30),
-                  Expanded(
-                    child: _buildCameraArea(),
+                  Image.asset(
+                    'assets/images/back_fill.png',
+                    width: 21,
+                    height: 21,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.arrow_back_ios,
+                        color: const Color(0xFF5381F6),
+                        size: 21,
+                      );
+                    },
                   ),
-                  const SizedBox(height: 30),
-                  _buildActionButtons(),
-                  const SizedBox(height: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'back',
+                    style: const TextStyle(
+                      fontFamily: 'AppleSDGothicNeo',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5381F6),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 120,
-          height: 47,
-          decoration: BoxDecoration(
-            color: const Color(0xFF6366F1),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                spreadRadius: 3,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: ElevatedButton(
-            onPressed: () {
-              // 로그인 화면으로 돌아가기 (모든 이전 화면 제거)
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.arrow_back_ios, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  'Back',
-                  style: GoogleFonts.roboto(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          
+          // Title
+          Positioned(
+            top: 140,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                '얼굴 등록하기',
+                style: const TextStyle(
+                  fontFamily: 'AppleSDGothicNeo',
+                  fontSize: 36,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        const Spacer(),
-      ],
-    );
-  }
-
-  // 배너 위치에 enroll.png 이미지를 보라색 배경 위에 표시
-  Widget _buildBannerImage() {
-    return SizedBox(
-      height : 55,
-      width: double.infinity,
-      child: Image.asset(
-        'assets/images/enroll_no.png',
-        fit: BoxFit.cover,
+          
+          // Camera area
+          Positioned(
+            top: 200,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 377,
+                height: 377,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD9D8D8),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: _buildCameraPreview(),
+              ),
+            ),
+          ),
+          
+          // Camera button
+          Positioned(
+            bottom: 140,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _buildCameraButtons(),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCameraArea() {
-    return Center(
-      child: Container(
-        width: 300,
-        height: 300,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF8B5CF6),
-              Color(0xFF3B82F6),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              spreadRadius: 5,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: _buildCameraPlaceholder(),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCameraPlaceholder() {
+  Widget _buildCameraPreview() {
     if (_isPhotoCaptured && _capturedImageBytes != null) {
-      return ClipOval(
-        child: SizedBox(
-          width: 280,
-          height: 280,
-          child: Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()..scale(-1.0, 1.0),
-            child: Image.memory(
-              _capturedImageBytes!,
+      // 촬영된 이미지 표시 (좌우반전)
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Transform.scale(
+          scaleX: -1,
+          child: Image.memory(
+            _capturedImageBytes!,
+            width: 377,
+            height: 377,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    if (_isCameraReady && _controller != null) {
+      // 디버그: 카메라 해상도 출력
+      final previewSize = _controller!.value.previewSize!;
+      print('카메라 프리뷰 해상도: ${previewSize.width}x${previewSize.height}');
+      print('카메라 종횡비: ${_controller!.value.aspectRatio}');
+      
+      // 실시간 카메라 프리뷰 (좌우반전, 정사각형 크롭)
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Transform.scale(
+          scaleX: -1,
+          child: SizedBox(
+            width: 377,
+            height: 377,
+            child: FittedBox(
               fit: BoxFit.cover,
+              child: SizedBox(
+                width: previewSize.height,
+                height: previewSize.width,
+                child: CameraPreview(_controller!),
+              ),
             ),
           ),
         ),
       );
     }
 
-    if (!_isCameraReady || _controller == null) {
-      return ClipOval(
-        child: Container(
-          width: 280,
-          height: 280,
-          color: const Color(0xFFF1F5F9),
-          child: const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-              strokeWidth: 3.0,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ClipOval(
-      child: SizedBox(
-        width: 280,
-        height: 280,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: CameraPreview(_controller!),
-        ),
+    // 카메라 로딩 중일 때
+    return const Center(
+      child: CircularProgressIndicator(
+        color: Color(0xFF5381F6),
       ),
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildCameraButtons() {
     if (!_isPhotoCaptured) {
-      return Container(
-        width: 295,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFFCADDFF),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              spreadRadius: 3,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: _handleTakePhoto,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFCADDFF),
-            foregroundColor: Colors.black,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          child: Text(
-            '촬영하기',
-            style: GoogleFonts.roboto(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
+      return GestureDetector(
+        onTap: _handleTakePhoto,
+        child: Image.asset(
+          'assets/images/camera.png',
+          width: 70,
+          height: 70,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                color: Color(0xFF5381F6),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+                size: 30,
+              ),
+            );
+          },
         ),
       );
     }
@@ -268,75 +232,53 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 145,
-          height: 56,
-          decoration: BoxDecoration(
-            color: const Color(0xFFCADDFF),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                spreadRadius: 3,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _handleRegister,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCADDFF),
-              foregroundColor: Colors.black,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: Text(
-              '등록하기',
-              style: GoogleFonts.roboto(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+        GestureDetector(
+          onTap: _handleRegister,
+          child: Image.asset(
+            'assets/images/check.png',
+            width: 70,
+            height: 70,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5381F6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              );
+            },
           ),
         ),
-        const SizedBox(width: 12),
-        Container(
-          width: 145,
-          height: 56,
-          decoration: BoxDecoration(
-            color: const Color(0xFFCADDFF),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                spreadRadius: 3,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _handleRetake,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCADDFF),
-              foregroundColor: Colors.black,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: Text(
-              '다시찍기',
-              style: GoogleFonts.roboto(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+        const SizedBox(width: 40),
+        GestureDetector(
+          onTap: _handleRetake,
+          child: Image.asset(
+            'assets/images/reload.png',
+            width: 70,
+            height: 70,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5381F6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -428,104 +370,85 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Container(
-          width: 457,
-          height: 235,
+          width: 400,
+          height: 200,
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F0F4),
-            borderRadius: BorderRadius.circular(5),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF9397B8).withValues(alpha: 0.15),
-                blurRadius: 9,
-                spreadRadius: 4,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
             children: [
               Positioned(
-                top: 10,
+                top: 16,
                 right: 16,
                 child: GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent,
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      size: 18,
-                      color: Color(0xFF4B4B4B),
-                    ),
+                  child: const Icon(
+                    Icons.close,
+                    size: 20,
+                    color: Color(0xFF666666),
                   ),
                 ),
               ),
-              Positioned.fill(
-                left: 8,
-                right: 8,
-                top: 16,
-                bottom: 16,
+              Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF44336),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                    const Icon(
+                      Icons.close,
+                      size: 60,
+                      color: Color(0xFF4A90E2),
                     ),
-                    const SizedBox(height: 25),
-                    Text(
-                      '얼굴 등록에 실패했습니다!\n다시 촬영해주세요.',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
+                    const SizedBox(height: 20),
+                    const Text(
+                      '얼굴 등록에 실패했습니다!',
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4B4B4B),
-                        height: 1.1,
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
-                    Container(
-                      width: 72,
-                      height: 27,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          // 다시 촬영할 수 있도록 상태 초기화 (카메라는 유지)
-                          setState(() {
-                            _isPhotoCaptured = false;
-                            _capturedImageBytes = null;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF185ABD),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                    const SizedBox(height: 30),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _isPhotoCaptured = false;
+                          _capturedImageBytes = null;
+                        });
+                      },
+                      child: Stack(
+                        children: [
+                          Image.asset(
+                            'assets/images/rectangle.png',
+                            width: 80,
+                            height: 35,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 80,
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4A90E2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              );
+                            },
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 0),
-                        ),
-                        child: Text(
-                          'OK',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.4,
+                          Positioned.fill(
+                            child: Center(
+                              child: Text(
+                                'okay',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
@@ -546,105 +469,87 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Container(
-          width: 457,
-          height: 235,
+          width: 400,
+          height: 200,
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F0F4),
-            borderRadius: BorderRadius.circular(5),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF9397B8).withValues(alpha: 0.15),
-                blurRadius: 9,
-                spreadRadius: 4,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
             children: [
               Positioned(
-                top: 10,
+                top: 16,
                 right: 16,
                 child: GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent,
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      size: 18,
-                      color: Color(0xFF4B4B4B),
-                    ),
+                  child: const Icon(
+                    Icons.close,
+                    size: 20,
+                    color: Color(0xFF666666),
                   ),
                 ),
               ),
-              Positioned.fill(
-                left: 8,
-                right: 8,
-                top: 16,
-                bottom: 16,
+              Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                    const Icon(
+                      Icons.check,
+                      size: 60,
+                      color: Color(0xFF4A90E2),
                     ),
-                    const SizedBox(height: 25),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       '얼굴 등록에 성공했습니다!',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4B4B4B),
-                        height: 1.1,
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
-                    Container(
-                      width: 72,
-                      height: 27,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          LoginLoadingScreenState.setUserRegistered();
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            (route) => false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF185ABD),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                    const SizedBox(height: 30),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        LoginLoadingScreenState.setUserRegistered();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      },
+                      child: Stack(
+                        children: [
+                          Image.asset(
+                            'assets/images/rectangle.png',
+                            width: 80,
+                            height: 35,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 80,
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4A90E2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              );
+                            },
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 0),
-                        ),
-                        child: Text(
-                          'OK',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.4,
+                          Positioned.fill(
+                            child: Center(
+                              child: Text(
+                                'okay',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
