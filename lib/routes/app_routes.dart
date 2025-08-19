@@ -4,7 +4,6 @@ import '../screens/login_loading_screen.dart';
 import '../screens/face_registration_screen.dart';
 import '../screens/face_enrollment_screen.dart';
 import '../screens/main_dashboard_screen.dart';
-import '../screens/settings_screen.dart';
 
 class AppRoutes {
   static const String login = '/';
@@ -12,7 +11,6 @@ class AppRoutes {
   static const String faceRegistration = '/face-registration';
   static const String faceEnrollment = '/face-enrollment';
   static const String main = '/main';
-  static const String settings = '/settings';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -21,7 +19,6 @@ class AppRoutes {
       '/face-registration': (context) => const FaceRegistrationScreen(),
       '/face-enrollment': (context) => const FaceEnrollmentScreen(),
       '/main': (context) => const MainDashboardScreen(),
-      '/settings': (context) => const SettingsScreen(),
     };
   }
 
@@ -37,8 +34,6 @@ class AppRoutes {
         return MaterialPageRoute(builder: (context) => const FaceEnrollmentScreen());
       case '/main':
         return MaterialPageRoute(builder: (context) => const MainDashboardScreen());
-      case '/settings':
-        return MaterialPageRoute(builder: (context) => const SettingsScreen());
       default:
         return null;
     }

@@ -731,6 +731,27 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         ),
                       ),
                     ),
+                    
+                    // SIGMA 로고와 텍스트 (하단 좌측)
+                    Positioned(
+                      left: 30,
+                      bottom: 10,
+                      child: Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/sigma_logo_grey.png',
+                            width: 20,
+                            height: 20,
+                          ),
+                          const SizedBox(width: 5),
+                          Image.asset(
+                            'assets/images/sigma_text_grey.png',
+                            width: 40,
+                            height: 20,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

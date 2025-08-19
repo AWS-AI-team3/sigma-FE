@@ -136,14 +136,14 @@ class HandOverlay(QWidget):
         # Flip frame for mirror effect
         frame = cv2.flip(frame, 1)
         
-        # Send frame to Flutter
+        # Always send frame to Flutter regardless of skeleton display
         self.send_frame_to_flutter(frame)
         
-        # Detect gestures
+        # Always detect gestures regardless of skeleton display
         processed_frame, gesture_data = self.gesture_detector.process_frame(frame)
         
         if gesture_data and gesture_data['landmarks'] is not None:
-            # Update landmarks and gesture data
+            # Always update landmarks and gesture data for gesture functionality
             landmarks = gesture_data['landmarks'].tolist()
             self.landmarks = landmarks
             self.gesture = gesture_data['gesture']
@@ -164,24 +164,26 @@ class HandOverlay(QWidget):
             # Send gesture to Flutter
             self.send_gesture_to_flutter(gesture_data['gesture'])
             
-            # Update display
-            self.update()
+            # Only update display if skeleton is enabled
+            if self.show_skeleton:
+                self.update()
         else:
-            # Clear overlay if no hand detected
+            # Clear overlay if no hand detected, but only trigger update if skeleton is enabled
             self.landmarks = None
             self.gesture = None
-            self.update()
+            if self.show_skeleton:
+                self.update()
     
     def send_frame_to_flutter(self, frame):
         """Send camera frame to Flutter"""
         try:
-            # Resize and encode
+            # Resize and encode - use higher resolution for better quality
             height, width = frame.shape[:2]
-            new_width = 180
+            new_width = 640  # Increased from 180 to 640 for better quality
             new_height = int(height * (new_width / width))
             resized_frame = cv2.resize(frame, (new_width, new_height))
             
-            _, buffer = cv2.imencode('.jpg', resized_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            _, buffer = cv2.imencode('.jpg', resized_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
             frame_b64 = base64.b64encode(buffer).decode('utf-8')
             
             frame_data = {
@@ -189,9 +191,10 @@ class HandOverlay(QWidget):
                 "data": frame_b64
             }
             
-            # Ensure UTF-8 encoding
+            # Send to Flutter via stdout (required for camera stream)
             json_str = json.dumps(frame_data, ensure_ascii=False)
-            print(json_str, flush=True)
+            sys.stdout.write(json_str + '\n')
+            sys.stdout.flush()
         except Exception as e:
             # Don't print errors that could contain binary data
             pass
@@ -411,6 +414,8 @@ class HandOverlay(QWidget):
         """Update skeleton display setting"""
         print(f"Updating skeleton display to: {show_skeleton}")
         self.show_skeleton = show_skeleton
+        
+        # Just trigger repaint - don't clear landmarks/gesture data to keep camera/gestures working
         self.update()  # Trigger repaint
     
     def update_motion_mapping(self, motion_mapping):

@@ -112,7 +112,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             right: 0,
             child: Center(
               child: Text(
-                '얼굴 등록하기',
+                '얼굴 인증하기',
                 style: const TextStyle(
                   fontFamily: 'AppleSDGothicNeo',
                   fontSize: 36,
