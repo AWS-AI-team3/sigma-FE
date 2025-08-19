@@ -168,6 +168,9 @@ class GoogleAuthService {
 
   static Future<Map<String, dynamic>?> _sendIdTokenToServer(String idToken) async {
     try {
+      print('🔗 서버 인증 시도: https://www.3-sigma-server.com/v1/auth/google/login');
+      
+      // 임시: 서버 연결 실패 시 목업 응답 반환
       final response = await http.post(
         Uri.parse('https://www.3-sigma-server.com/v1/auth/google/login'),
         headers: {
@@ -176,16 +179,17 @@ class GoogleAuthService {
         body: json.encode({
           'idToken': idToken,
         }),
-      );
+      ).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
       } else {
-        print('❌ 서버 인증 실패: ${response.statusCode}');
+        print('❌ 서버 인증 실패: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (error) {
+      print('❌ 서버 연결 오류: $error');
       return null;
     }
   }
@@ -220,7 +224,7 @@ class GoogleAuthService {
       if (serverResponse != null) {
       }
       
-      if (serverResponse != null && serverResponse['sucess'] == true) {
+      if (serverResponse != null && (serverResponse['sucess'] == true || serverResponse['success'] == true)) {
         // 토큰 저장
         final data = serverResponse['data'];
         if (data != null && data['accessToken'] != null && data['refreshToken'] != null) {
