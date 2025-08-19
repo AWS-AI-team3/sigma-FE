@@ -77,10 +77,10 @@ class PythonService {
             final decoded = utf8.decode(data);
             final lines = decoded.split('\n');
             
-            // Log all non-empty lines to see what's actually received
+            // Log all non-empty lines to see what's actually received (except camera_frame)
             for (final line in lines) {
-              if (line.trim().isNotEmpty && line.contains('transcript')) {
-                print('RAW Python output: $line');
+              if (line.trim().isNotEmpty && !line.contains('camera_frame')) {
+                print('Python: $line');
               }
             }
             

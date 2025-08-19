@@ -201,15 +201,15 @@ class LocalAgent:
                             # 최근 수정된 파일부터 정렬
                             files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
                             
-                            # 상위 몇개만 추가
-                            for file in files[:2]:  # 각 확장자당 최대 2개
-                                if len(recent_files) < 10:  # 전체 최대 10개
+                            # 상위 하나만 추가
+                            for file in files[:1]:  # 각 확장자당 최대 1개
+                                if len(recent_files) < 1:  # 전체 최대 1개
                                     recent_files.append(str(file))
                         except Exception:
                             continue
             
             if recent_files:
-                return '\n'.join(recent_files[:10])
+                return '\n'.join(recent_files[:1])
             else:
                 return "최근 파일을 찾을 수 없습니다."
                 

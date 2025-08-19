@@ -19,8 +19,8 @@ class GestureDetector:
         )
         
         # Thresholds
-        self.pinch_threshold = 0.06
-        self.scroll_threshold = 0.08  # Larger threshold for scroll
+        self.pinch_threshold = 0.05
+        self.scroll_threshold = 0.07  # Larger threshold for scroll
         
         # Motion mapping configuration
         self.motion_mapping = motion_mapping or {

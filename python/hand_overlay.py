@@ -442,10 +442,17 @@ class HandOverlay(QWidget):
                 # Choose color based on gesture and dynamic mapping
                 color = self._get_fingertip_color(idx)
                 
+                # Draw inner filled circle
+                painter.setBrush(color)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(x - 4, y - 4, 8, 8)
+                
+                # Draw outer ring (with gap from inner circle)
                 pen = QPen(color)
-                pen.setWidth(10)
+                pen.setWidth(3)
                 painter.setPen(pen)
-                painter.drawPoint(x, y)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawEllipse(x - 8, y - 8, 16, 16)
                 
     def _get_fingertip_color(self, fingertip_idx):
         """Get color for fingertip based on current gesture and motion mapping"""

@@ -552,10 +552,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     // 명령 도움말 메뉴 (하단 안내 패널 위)
                     Positioned(
                       left: 30,
-                      bottom: 160,
+                      bottom: 140,
                       child: Container(
                         width: containerWidth * 0.85,
-                        height: 110,
+                        height: 150,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
@@ -583,7 +583,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
                                   color: const Color(0xFF6B6B6B),
-                                  height: 1.0,
+                                  height: 0.5,
                                 ),
                               ),
                             ),
@@ -594,7 +594,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                 children: [
                                   _buildCommandItem(
                                     icon: Icons.verified_outlined,
-                                    text: "검색하기 ('브라우저 이름'에서 '찾고싶은것' 찾아줘",
+                                    text: "유튜브 열어줘",
+                                  ),
+                                  _buildCommandItem(
+                                    icon: Icons.verified_outlined,
+                                    text: "바탕화면에 텍스트 파일 만들고 열어줘",
+                                  ),
+                                  _buildCommandItem(
+                                    icon: Icons.verified_outlined,
+                                    text: "가장 최근에 수정했던 파일 열어줘",
                                   ),
                                 ],
                               ),
@@ -735,8 +743,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   Widget _buildCommandItem({required IconData icon, required String text}) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2.5),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      margin: const EdgeInsets.symmetric(vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
