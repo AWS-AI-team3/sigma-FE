@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'main_dashboard_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
-import '../services/camera_manager.dart';
 import '../services/face_auth_service.dart';
+import '../themes/app_theme.dart';
+import '../widgets/safe_image_asset.dart';
+import '../mixins/camera_mixin.dart';
 
 class FaceRegistrationScreen extends StatefulWidget {
   const FaceRegistrationScreen({super.key});
@@ -13,10 +15,8 @@ class FaceRegistrationScreen extends StatefulWidget {
   State<FaceRegistrationScreen> createState() => _FaceRegistrationScreenState();
 }
 
-class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
+class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with CameraMixin {
   bool _isPhotoCaptured = false;
-  CameraController? _controller;
-  bool _isCameraReady = false;
   Uint8List? _capturedImageBytes;
   bool _isAuthenticating = false;
   
@@ -26,7 +26,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    initializeCamera();
   }
 
   @override
@@ -37,28 +37,19 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   }
 
   @override
-  void dispose() {
-    // 화면을 떠날 때 카메라 해제
-    CameraManager.instance.dispose();
-    _controller?.dispose();
-    super.dispose();
+  void onCameraInitialized() {
+    // 카메라 초기화 완료 시 추가 처리
   }
 
-  Future<void> _initializeCamera() async {
-    try {
-      _controller = await CameraManager.instance.initializeCamera();
-      if (mounted && _controller != null) {
-        setState(() {
-          _isCameraReady = true;
-        });
-      }
-    } catch (e) {
-      print('카메라 초기화 실패: $e');
-      if (mounted) {
-        setState(() {
-          _isCameraReady = false;
-        });
-      }
+  @override
+  void onCameraInitializeFailed(dynamic error) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('카메라 초기화에 실패했습니다: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -77,28 +68,16 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'assets/images/back_fill.png',
-                    width: 21,
-                    height: 21,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.arrow_back_ios,
-                        color: const Color(0xFF5381F6),
-                        size: 21,
-                      );
-                    },
+                  SafeIconImage(
+                    assetPath: 'assets/images/back_fill.png',
+                    size: 21,
+                    fallbackIcon: Icons.arrow_back_ios,
+                    color: AppTheme.sigmaLightBlue,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'back',
-                    style: const TextStyle(
-                      fontFamily: 'AppleSDGothicNeo',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5381F6),
-                    ),
+                    style: AppTheme.sigmaBackButtonStyle,
                   ),
                 ],
               ),
@@ -133,7 +112,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                 width: 377,
                 height: 377,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD9D8D8),
+                  color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: _buildCameraPreview(),
@@ -162,7 +141,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
         width: 377,
         height: 377,
         decoration: BoxDecoration(
-          color: const Color(0xFFD9D8D8),
+          color: AppTheme.backgroundGray,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
@@ -182,18 +161,18 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
       );
     }
 
-    if (_isCameraReady && _controller != null) {
+    if (isCameraReady && cameraController != null) {
       // 디버그: 카메라 해상도 출력
-      final previewSize = _controller!.value.previewSize!;
+      final previewSize = cameraController!.value.previewSize!;
       print('카메라 프리뷰 해상도: ${previewSize.width}x${previewSize.height}');
-      print('카메라 종횡비: ${_controller!.value.aspectRatio}');
+      print('카메라 종횡비: ${cameraController!.value.aspectRatio}');
       
       // 실시간 카메라 프리뷰 (가운데 정렬)
       return Container(
         width: 377,
         height: 377,
         decoration: BoxDecoration(
-          color: const Color(0xFFD9D8D8),
+          color: AppTheme.backgroundGray,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
@@ -205,9 +184,9 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
               child: FittedBox(
                 fit: BoxFit.cover,
                 child: SizedBox(
-                  width: _controller!.value.previewSize!.height,
-                  height: _controller!.value.previewSize!.width,
-                  child: CameraPreview(_controller!),
+                  width: cameraController!.value.previewSize!.height,
+                  height: cameraController!.value.previewSize!.width,
+                  child: CameraPreview(cameraController!),
                 ),
               ),
             ),
@@ -219,7 +198,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     // 카메라 로딩 중일 때
     return const Center(
       child: CircularProgressIndicator(
-        color: Color(0xFF5381F6),
+        color: AppTheme.sigmaLightBlue,
       ),
     );
   }
@@ -238,7 +217,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
               width: 60,
               height: 60,
               decoration: const BoxDecoration(
-                color: Color(0xFF5381F6),
+                color: AppTheme.sigmaLightBlue,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -264,7 +243,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                   child: Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5381F6)),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.sigmaLightBlue),
                     ),
                   ),
                 )
@@ -278,7 +257,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                       width: 60,
                       height: 60,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF5381F6),
+                        color: AppTheme.sigmaLightBlue,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -303,7 +282,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                 width: 60,
                 height: 60,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF5381F6),
+                  color: AppTheme.sigmaLightBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -321,8 +300,8 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
 
   void _handleTakePhoto() async {
     try {
-      if (_controller != null && _isCameraReady) {
-        final image = await _controller!.takePicture();
+      if (cameraController != null && isCameraReady) {
+        final image = await cameraController!.takePicture();
         final imageBytes = await image.readAsBytes();
         
         // 디버그: 촬영된 이미지 정보 출력
@@ -408,7 +387,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
+      barrierColor: AppTheme.overlayBackground.withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -429,7 +408,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                   child: const Icon(
                     Icons.close,
                     size: 20,
-                    color: Color(0xFF666666),
+                    color: AppTheme.dialogGray,
                   ),
                 ),
               ),
@@ -441,12 +420,12 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                       'assets/images/check_fill.png',
                       width: 60,
                       height: 60,
-                      color: const Color(0xFF5381F6),
+                      color: AppTheme.sigmaLightBlue,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.check,
                           size: 60,
-                          color: Color(0xFF5381F6),
+                          color: AppTheme.sigmaLightBlue,
                         );
                       },
                     ),
@@ -481,7 +460,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                                 width: 80,
                                 height: 35,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF5381F6),
+                                  color: AppTheme.sigmaLightBlue,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               );
@@ -516,7 +495,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
+      barrierColor: AppTheme.overlayBackground.withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -537,7 +516,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                   child: const Icon(
                     Icons.close,
                     size: 20,
-                    color: Color(0xFF666666),
+                    color: AppTheme.dialogGray,
                   ),
                 ),
               ),
@@ -549,12 +528,12 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                       'assets/images/x_fill.png',
                       width: 60,
                       height: 60,
-                      color: const Color(0xFF5381F6),
+                      color: AppTheme.sigmaLightBlue,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.close,
                           size: 60,
-                          color: Color(0xFF5381F6),
+                          color: AppTheme.sigmaLightBlue,
                         );
                       },
                     ),
@@ -583,7 +562,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                                 width: 80,
                                 height: 35,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF5381F6),
+                                  color: AppTheme.sigmaLightBlue,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               );

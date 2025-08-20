@@ -5,7 +5,8 @@ import 'login_screen.dart';
 import 'package:camera/camera.dart';
 import 'dart:typed_data';
 import '../services/face_service.dart';
-import '../services/camera_manager.dart';
+import '../themes/app_theme.dart';
+import '../mixins/camera_mixin.dart';
 
 class FaceEnrollmentScreen extends StatefulWidget {
   const FaceEnrollmentScreen({super.key});
@@ -14,41 +15,25 @@ class FaceEnrollmentScreen extends StatefulWidget {
   State<FaceEnrollmentScreen> createState() => _FaceEnrollmentScreenState();
 }
 
-class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
+class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> with CameraMixin, AutoCameraMixin {
   bool _isPhotoCaptured = false;
-  CameraController? _controller;
-  bool _isCameraReady = false;
   Uint8List? _capturedImageBytes;
 
   @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
+  void onCameraInitialized() {
+    // 카메라 초기화 완료 시 추가 처리가 필요하면 여기에 구현
   }
 
   @override
-  void dispose() {
-    // 화면을 떠날 때 카메라 해제
-    CameraManager.instance.dispose();
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initializeCamera() async {
-    try {
-      _controller = await CameraManager.instance.initializeCamera();
-      if (mounted && _controller != null) {
-        setState(() {
-          _isCameraReady = true;
-        });
-      }
-    } catch (e) {
-      print('카메라 초기화 실패: $e');
-      if (mounted) {
-        setState(() {
-          _isCameraReady = false;
-        });
-      }
+  void onCameraInitializeFailed(dynamic error) {
+    // 카메라 초기화 실패 시 사용자에게 알림 등 처리
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('카메라 초기화에 실패했습니다: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -78,7 +63,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(
                         Icons.arrow_back_ios,
-                        color: const Color(0xFF5381F6),
+                        color: AppTheme.sigmaLightBlue,
                         size: 21,
                       );
                     },
@@ -90,7 +75,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                       fontFamily: 'AppleSDGothicNeo',
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF5381F6),
+                      color: AppTheme.sigmaLightBlue,
                     ),
                   ),
                 ],
@@ -126,7 +111,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                 width: 377,
                 height: 377,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD9D8D8),
+                  color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: _buildCameraPreview(),
@@ -156,7 +141,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         width: 377,
         height: 377,
         decoration: BoxDecoration(
-          color: const Color(0xFFD9D8D8),
+          color: AppTheme.backgroundGray,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
@@ -176,18 +161,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       );
     }
 
-    if (_isCameraReady && _controller != null) {
+    if (isCameraReady && cameraController != null) {
       // 디버그: 카메라 해상도 출력
-      final previewSize = _controller!.value.previewSize!;
+      final previewSize = cameraController!.value.previewSize!;
       print('카메라 프리뷰 해상도: ${previewSize.width}x${previewSize.height}');
-      print('카메라 종횡비: ${_controller!.value.aspectRatio}');
+      print('카메라 종횡비: ${cameraController!.value.aspectRatio}');
       
       // 실시간 카메라 프리뷰 (가운데 정렬)
       return Container(
         width: 377,
         height: 377,
         decoration: BoxDecoration(
-          color: const Color(0xFFD9D8D8),
+          color: AppTheme.backgroundGray,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
@@ -199,9 +184,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
               child: FittedBox(
                 fit: BoxFit.cover,
                 child: SizedBox(
-                  width: _controller!.value.previewSize!.height,
-                  height: _controller!.value.previewSize!.width,
-                  child: CameraPreview(_controller!),
+                  width: cameraController!.value.previewSize!.height,
+                  height: cameraController!.value.previewSize!.width,
+                  child: CameraPreview(cameraController!),
                 ),
               ),
             ),
@@ -213,7 +198,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     // 카메라 로딩 중일 때
     return const Center(
       child: CircularProgressIndicator(
-        color: Color(0xFF5381F6),
+        color: AppTheme.sigmaLightBlue,
       ),
     );
   }
@@ -232,7 +217,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
               width: 60,
               height: 60,
               decoration: const BoxDecoration(
-                color: Color(0xFF5381F6),
+                color: AppTheme.sigmaLightBlue,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -261,7 +246,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                 width: 60,
                 height: 60,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF5381F6),
+                  color: AppTheme.sigmaLightBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -286,7 +271,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                 width: 60,
                 height: 60,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF5381F6),
+                  color: AppTheme.sigmaLightBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -304,8 +289,8 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   void _handleTakePhoto() async {
     try {
-      if (_controller != null && _isCameraReady) {
-        final image = await _controller!.takePicture();
+      if (cameraController != null && isCameraReady) {
+        final image = await cameraController!.takePicture();
         final imageBytes = await image.readAsBytes();
         setState(() {
           _capturedImageBytes = imageBytes;
@@ -382,7 +367,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
+      barrierColor: AppTheme.overlayBackground.withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -403,7 +388,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                   child: const Icon(
                     Icons.close,
                     size: 20,
-                    color: Color(0xFF666666),
+                    color: AppTheme.dialogGray,
                   ),
                 ),
               ),
@@ -414,7 +399,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                     const Icon(
                       Icons.close,
                       size: 60,
-                      color: Color(0xFF4A90E2),
+                      color: AppTheme.buttonBlue,
                     ),
                     const SizedBox(height: 20),
                     const Text(
@@ -447,7 +432,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                                 width: 80,
                                 height: 35,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF4A90E2),
+                                  color: AppTheme.buttonBlue,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               );
@@ -481,7 +466,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     showDialog(
       context: dialogContext,
       barrierDismissible: false,
-      barrierColor: const Color(0xFF0C0C0C).withValues(alpha: 0.75),
+      barrierColor: AppTheme.overlayBackground.withValues(alpha: 0.75),
       builder: (BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -502,7 +487,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                   child: const Icon(
                     Icons.close,
                     size: 20,
-                    color: Color(0xFF666666),
+                    color: AppTheme.dialogGray,
                   ),
                 ),
               ),
@@ -513,7 +498,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                     const Icon(
                       Icons.check,
                       size: 60,
-                      color: Color(0xFF4A90E2),
+                      color: AppTheme.buttonBlue,
                     ),
                     const SizedBox(height: 20),
                     const Text(
@@ -548,7 +533,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                                 width: 80,
                                 height: 35,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF4A90E2),
+                                  color: AppTheme.buttonBlue,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               );

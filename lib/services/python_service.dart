@@ -53,9 +53,38 @@ class PythonService {
         print('No access token available, using default motion mapping');
       }
 
+      // Debug: Print command details
+      print('Working directory: ${Directory.current.path}');
+      print('Command: uv ${args.join(' ')}');
+      print('Python script exists: ${await scriptFile.exists()}');
+      
+      // Try to find uv executable
+      String uvExecutable = 'uv';
+      if (Platform.isWindows) {
+        // Try common uv installation paths on Windows
+        final commonPaths = [
+          'C:\\Users\\pjw03\\.local\\bin\\uv.exe',
+          'uv.exe',
+          'uv'
+        ];
+        
+        for (final path in commonPaths) {
+          try {
+            final result = await Process.run(path, ['--version']);
+            if (result.exitCode == 0) {
+              uvExecutable = path;
+              print('Found uv at: $uvExecutable');
+              break;
+            }
+          } catch (e) {
+            // Continue to next path
+          }
+        }
+      }
+      
       // Start Python process with hand tracking overlay using uv
       _handTrackingProcess = await Process.start(
-        'uv', 
+        uvExecutable, 
         args,  // -u flag for unbuffered output
         workingDirectory: Directory.current.path,
         mode: ProcessStartMode.normal,
@@ -69,6 +98,12 @@ class PythonService {
         _isTracking = true;
         _pythonProcessId = _handTrackingProcess!.pid;
         print('Hand tracking started successfully (PID: $_pythonProcessId)');
+        
+        // Process exit handler for debugging
+        _handTrackingProcess!.exitCode.then((exitCode) {
+          print('Python process exited with code: $exitCode');
+          _isTracking = false;
+        });
         
         // Listen to process output and parse camera frames and gestures
         _handTrackingProcess!.stdout.listen((data) {
@@ -172,8 +207,18 @@ class PythonService {
 
         return true;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error starting hand tracking: $e');
+      print('Stack trace: $stackTrace');
+      
+      // Additional error information
+      if (e is ProcessException) {
+        print('ProcessException details:');
+        print('  executable: ${e.executable}');
+        print('  arguments: ${e.arguments}');
+        print('  errorCode: ${e.errorCode}');
+        print('  message: ${e.message}');
+      }
     }
     
     return false;

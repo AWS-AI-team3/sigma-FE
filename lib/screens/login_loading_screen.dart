@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
+import '../themes/app_theme.dart';
+import '../widgets/sigma_branding_text.dart';
 
 class LoginLoadingScreen extends StatefulWidget {
   const LoginLoadingScreen({super.key});
@@ -123,7 +125,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                         children: const [
                           TextSpan(
                             text: 'S',
-                            style: TextStyle(color: Color(0xFF383AF4)),
+                            style: TextStyle(color: AppTheme.sigmaBlue),
                           ),
                           TextSpan(
                             text: 'mart ',
@@ -131,7 +133,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                           ),
                           TextSpan(
                             text: 'I',
-                            style: TextStyle(color: Color(0xFF383AF4)),
+                            style: TextStyle(color: AppTheme.sigmaBlue),
                           ),
                           TextSpan(
                             text: 'nteractive ',
@@ -139,7 +141,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                           ),
                           TextSpan(
                             text: 'G',
-                            style: TextStyle(color: Color(0xFF383AF4)),
+                            style: TextStyle(color: AppTheme.sigmaBlue),
                           ),
                           TextSpan(
                             text: 'esture',
@@ -177,7 +179,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                         children: const [
                           TextSpan(
                             text: 'M',
-                            style: TextStyle(color: Color(0xFF383AF4)),
+                            style: TextStyle(color: AppTheme.sigmaBlue),
                           ),
                           TextSpan(
                             text: 'anagement ',
@@ -185,7 +187,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                           ),
                           TextSpan(
                             text: 'A',
-                            style: TextStyle(color: Color(0xFF383AF4)),
+                            style: TextStyle(color: AppTheme.sigmaBlue),
                           ),
                           TextSpan(
                             text: 'ssistant',
@@ -204,7 +206,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         border: Border.all(
-                          color: const Color(0xFFDADCE0),
+                          color: AppTheme.borderGray,
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(40),
@@ -220,7 +222,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2.0,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF383AF4),
+                                AppTheme.sigmaBlue,
                               ),
                             ),
                           ),
@@ -230,7 +232,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                             style: GoogleFonts.roboto(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF3C4043),
+                              color: AppTheme.textGray,
                             ),
                           ),
                         ],
@@ -258,7 +260,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                           fontFamily: 'AppleSDGothicNeo',
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFB2B0B0),
+                          color: AppTheme.logoGray,
                         ),
                       );
                     },
@@ -273,7 +275,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                         width: 5.238,
                         height: 5.238,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFB2B0B0),
+                          color: AppTheme.logoGray,
                           shape: BoxShape.circle,
                         ),
                       );
@@ -287,7 +289,7 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
                     errorBuilder: (context, error, stackTrace) {
                       return const Icon(
                         Icons.cloud,
-                        color: Color(0xFFB2B0B0),
+                        color: AppTheme.logoGray,
                         size: 24,
                       );
                     },

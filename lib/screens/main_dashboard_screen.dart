@@ -7,6 +7,10 @@ import '../services/face_auth_service.dart';
 import '../services/user_service.dart';
 import '../services/google_auth_service.dart';
 import '../providers/settings_provider.dart';
+import '../themes/app_theme.dart';
+import '../widgets/user_info_card.dart';
+import '../widgets/logout_button.dart';
+import '../widgets/control_buttons.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -300,7 +304,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 로그아웃 버튼
-                      GestureDetector(
+                      LogoutButton(
                         onTap: () async {
                           await GoogleAuthService.logout();
                           if (mounted) {
@@ -311,96 +315,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             );
                           }
                         },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.arrow_back_ios,
-                              color: Color(0xFF5381F6),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Transform.translate(
-                              offset: const Offset(0, 2),
-                              child: Text(
-                                '로그아웃',
-                                style: const TextStyle(
-                                  fontFamily: 'AppleSDGothicNeo',
-                                  color: Color(0xFF5381F6),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w200,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                       
                       const SizedBox(height: 40),
                       
                       // 사용자 정보 컨테이너
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: const BoxDecoration(
-                                color: Colors.grey,
-                                shape: BoxShape.circle,
-                              ),
-                              child: _profileUrl != null
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        _profileUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Icon(Icons.person, color: Colors.white, size: 30);
-                                        },
-                                      ),
-                                    )
-                                  : const Icon(Icons.person, color: Colors.white, size: 30),
-                            ),
-                            const SizedBox(width: 15),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _userName,
-                                  style: const TextStyle(
-                                    fontFamily: 'AppleSDGothicNeo',
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                Text(
-                                  _subscriptStatus,
-                                  style: TextStyle(
-                                    fontFamily: 'AppleSDGothicNeo',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      UserInfoCard(
+                        userName: _userName,
+                        profileUrl: _profileUrl,
+                        subscriptStatus: _subscriptStatus,
                       ),
                       
                       const SizedBox(height: 20),

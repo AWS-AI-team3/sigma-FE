@@ -237,6 +237,45 @@ class AppTheme {
     );
   }
   
+  // SIGMA 브랜딩 색상
+  static const Color sigmaBlue = Color(0xFF383AF4);
+  static const Color sigmaLightBlue = Color(0xFF5381F6);
+  
+  // UI 공통 색상
+  static const Color borderGray = Color(0xFFDADCE0);
+  static const Color textGray = Color(0xFF3C4043);
+  static const Color logoGray = Color(0xFFB2B0B0);
+  static const Color backgroundGray = Color(0xFFD9D8D8);
+  static const Color lightBackgroundGray = Color(0xFFE8E8E8);
+  static const Color lightGray = Color(0xFFF2F2F7);
+  static const Color iconGray = Color(0xFFA2A2A2);
+  static const Color mediumGray = Color(0xFF7A7A7A);
+  static const Color separatorGray = Color(0xFFE6E5E5);
+  static const Color overlayBackground = Color(0xFF0C0C0C);
+  static const Color dialogGray = Color(0xFF666666);
+  static const Color buttonBlue = Color(0xFF4A90E2);
+  static const Color googleBlue = Color(0xFF4285F4);
+  static const Color cameraGreen = Color(0xFF34BF49);
+  static const Color micRed = Colors.red;
+  static const Color lightMicGray = Color(0xFFBDBDBD);
+  static const Color errorRed = Color(0xFFFF5252);
+  static const Color lightBlueBackground = Color(0xFFF8F9FF);
+  static const Color settingsGray = Color(0xFFCECCCC);
+  static const Color arrowGray = Color(0xFF827F7F);
+  static const Color settingsBackground = Color(0xFFF0F0F4);
+  static const Color settingsBorder = Color(0xFF9397B8);
+  static const Color settingsText = Color(0xFF4B4B4B);
+  static const Color settingsOrange = Color(0xFFFF5722);
+  static const Color settingsButtonGray = Color(0xFF9CA3AF);
+  static const Color settingsButtonBlue = Color(0xFF185ABD);
+  
+  // 그라데이션
+  static const LinearGradient sigmaGradient = LinearGradient(
+    colors: [Color(0xFF578EF6), Color(0xFF496BF5), Color(0xFF383AF4)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
   // 커스텀 색상 확장
   static const Map<String, Color> customColors = {
     'cameraGreen': Color(0xFF10B981),
@@ -245,6 +284,29 @@ class AppTheme {
     'infoBlue': Color(0xFF3B82F6),
     'neutralGray': Color(0xFF6B7280),
   };
+  
+  // SIGMA 브랜딩 텍스트 스타일
+  static TextStyle get sigmaAcronymStyle => const TextStyle(
+    fontFamily: 'AppleSDGothicNeo',
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+  
+  static TextStyle get sigmaTitleStyle => const TextStyle(
+    fontFamily: 'AppleSDGothicNeo',
+    fontSize: 64,
+    fontWeight: FontWeight.w900,
+    color: Colors.black,
+    height: 1.0,
+  );
+  
+  static TextStyle get sigmaBackButtonStyle => const TextStyle(
+    fontFamily: 'AppleSDGothicNeo',
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF5381F6),
+  );
   
   // 그라데이션
   static const LinearGradient primaryGradient = LinearGradient(
