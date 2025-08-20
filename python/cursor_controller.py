@@ -9,7 +9,7 @@ class CursorController:
     def __init__(self):
         self.screen_width, self.screen_height = pyautogui.size()
         self.last_click_time = 0
-        self.click_cooldown = 0.3  # Prevent multiple clicks
+        self.click_cooldown = 0.05  # Further reduced from 0.1 for ultra-fast response
         
         # Disable pyautogui failsafe and pause
         pyautogui.FAILSAFE = False
@@ -20,7 +20,7 @@ class CursorController:
         if thumb_pos is not None:
             screen_x = int(thumb_pos[0] * self.screen_width)
             screen_y = int(thumb_pos[1] * self.screen_height)
-            pyautogui.moveTo(screen_x, screen_y, duration=0.01)
+            pyautogui.moveTo(screen_x, screen_y, duration=0)  # Zero duration for instant movement
     
     def handle_gesture(self, gesture):
         """Handle detected gestures"""

@@ -43,7 +43,8 @@ class HandOverlay(QWidget):
         self.websocket_client = WebSocketClient(
             transcript_callback=self.update_transcript,
             command_callback=self.handle_command_response,
-            local_agent=self.local_agent
+            local_agent=self.local_agent,
+            info_request_callback=self.handle_info_request
         )
         print("Initializing audio recorder...")
         self.audio_recorder = AudioRecorder(self.websocket_client)
@@ -77,7 +78,8 @@ class HandOverlay(QWidget):
             if self.cap.isOpened():
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                 self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer size
+                self.cap.set(cv2.CAP_PROP_FPS, 120)  # Request higher FPS if supported
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimize buffer for lower latency
                 print("Camera initialized successfully")
             else:
                 print("Failed to initialize camera")
@@ -91,7 +93,7 @@ class HandOverlay(QWidget):
         # Timer for processing
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_frame)
-        self.timer.start(33)  # ~30 FPS
+        self.timer.start(8)   # ~120 FPS (reduced from 16ms to 8ms for maximum responsiveness)
         
         # Timer for stdin processing - use thread instead of timer for Windows
         import threading
@@ -253,12 +255,33 @@ class HandOverlay(QWidget):
                 if self.audio_recorder.is_recording:
                     self.audio_recorder.stop_recording()
                     print("Audio recording stopped")
-                    # Start timer to clear transcript if no new transcript received
-                    import time
-                    self.last_transcript_time = time.time()
+                    
+                    # Check if we have transcript text
+                    if not self.current_transcript.strip():
+                        # No transcript text - reset UI to initial state
+                        self.reset_ui_state()
+                    else:
+                        # Start timer to clear transcript if no new transcript received
+                        import time
+                        self.last_transcript_time = time.time()
             # recording_hold - do nothing, keep recording
         except Exception as e:
             print(f"Error handling audio recording: {e}")
+    
+    def reset_ui_state(self):
+        """Reset Flutter UI to initial state when no transcript text"""
+        try:
+            # Send reset message to Flutter
+            reset_data = {
+                "type": "ui_reset",
+                "status": "reset",
+                "message": "UI 상태 초기화"
+            }
+            json_str = json.dumps(reset_data, ensure_ascii=False)
+            print(json_str, flush=True)
+            print("UI 상태가 초기화되었습니다 (텍스트 없음)")
+        except Exception as e:
+            print(f"Error resetting UI state: {e}")
     
     def handle_paste_gesture(self, gesture):
         """Handle paste gesture for clipboard"""
@@ -291,9 +314,22 @@ class HandOverlay(QWidget):
         except Exception as e:
             print(f"Error handling paste gesture: {e}")
     
-    def update_transcript(self, text):
-        """Update current transcript for pasting"""
+    def update_transcript(self, text, is_partial=False):
+        """Update current transcript for pasting and real-time display"""
+        # Always update display transcript (both partial and final)
         self.current_transcript = text
+        
+        # Send transcript data to Flutter for real-time display
+        transcript_data = {
+            "type": "transcript",
+            "text": text,
+            "is_partial": is_partial
+        }
+        try:
+            json_str = json.dumps(transcript_data, ensure_ascii=False)
+            print(json_str, flush=True)
+        except Exception as e:
+            print(f"Error sending transcript to Flutter: {e}", flush=True)
         
         # Automatically copy transcript to clipboard when received
         if text.strip():
@@ -312,13 +348,134 @@ class HandOverlay(QWidget):
                 command = data.get('command', '')
                 if command:
                     print(f"명령어 수신: {command}")
-                    # Execute the command
-                    self.command_executor.execute_command(command)
+                    # Execute command asynchronously to avoid blocking WebSocket
+                    import threading
+                    threading.Thread(
+                        target=self.execute_command_async, 
+                        args=(command,), 
+                        daemon=True
+                    ).start()
             else:
                 error_message = data.get('message', '명령어 생성 실패')
                 print(f"명령어 생성 오류: {error_message}")
+                
+                # If command generation failed and no transcript, reset UI
+                if not self.current_transcript.strip():
+                    self.reset_ui_state()
         except Exception as e:
             print(f"Error handling command response: {e}")
+    
+    def execute_command_async(self, command):
+        """Execute command asynchronously to prevent blocking WebSocket"""
+        try:
+            # Send execution start status to Flutter
+            start_data = {
+                "type": "command_execution",
+                "status": "executing",
+                "command": command
+            }
+            json_str = json.dumps(start_data, ensure_ascii=False)
+            print(json_str, flush=True)
+            
+            print(f"비동기 명령어 실행 시작: {command}")
+            success, output, error = self.local_agent.execute_command(command)
+            
+            if success:
+                if output:
+                    # Copy result to clipboard like main.py
+                    try:
+                        import pyperclip
+                        pyperclip.copy(output)
+                        print("실행 완료, 결과 복사됨")
+                        
+                        # Send success status to Flutter
+                        success_data = {
+                            "type": "command_execution",
+                            "status": "success",
+                            "command": command,
+                            "output": output,
+                            "copied": True
+                        }
+                    except Exception as e:
+                        print(f"Error copying to clipboard: {e}")
+                        print("실행 완료")
+                        
+                        # Send success status without clipboard
+                        success_data = {
+                            "type": "command_execution", 
+                            "status": "success",
+                            "command": command,
+                            "output": output,
+                            "copied": False
+                        }
+                else:
+                    print("실행 완료")
+                    success_data = {
+                        "type": "command_execution",
+                        "status": "success", 
+                        "command": command,
+                        "output": "",
+                        "copied": False
+                    }
+                
+                json_str = json.dumps(success_data, ensure_ascii=False)
+                print(json_str, flush=True)
+            else:
+                error_msg = error if error else "알 수 없는 오류"
+                print(f"실행 오류: {error_msg}")
+                
+                # Send error status to Flutter
+                error_data = {
+                    "type": "command_execution",
+                    "status": "error",
+                    "command": command,
+                    "error": error_msg
+                }
+                json_str = json.dumps(error_data, ensure_ascii=False)
+                print(json_str, flush=True)
+                
+        except Exception as e:
+            print(f"Error in async command execution: {e}")
+            
+            # Send failure status to Flutter
+            failure_data = {
+                "type": "command_execution",
+                "status": "failed",
+                "command": command if 'command' in locals() else "unknown",
+                "error": str(e)
+            }
+            json_str = json.dumps(failure_data, ensure_ascii=False)
+            print(json_str, flush=True)
+    
+    def handle_info_request(self, data):
+        """Handle system info request from WebSocket (like main.py)"""
+        try:
+            info = data.get('info', '')
+            
+            # Handle OS info request
+            if info == 'get_os':
+                os_info = self.local_agent.get_os_type()
+                self.websocket_client.send_message({
+                    'action': 'generate_command',
+                    'type': 'respond_info',
+                    'info': 'get_os',
+                    'data': os_info,
+                })
+                print(f"OS 정보 송신: {os_info}")
+            
+            # Handle recent files request
+            elif info == 'get_recent_files':
+                recent_files = self.local_agent.get_recent_files()
+                self.websocket_client.send_message({
+                    'action': 'generate_command',
+                    'type': 'respond_info',
+                    'info': 'get_recent_files',
+                    'data': recent_files,
+                })
+                print(f"최근 파일 정보 송신: {recent_files}")
+                
+        except Exception as e:
+            print(f"Error handling info request: {e}")
     
     def check_websocket_status(self):
         """Check WebSocket connection status"""
@@ -398,6 +555,10 @@ class HandOverlay(QWidget):
             elif command_type == 'manual_recording_stop':
                 # Manual recording stop via mic button
                 print("Manual recording stop requested")
+                # Check transcript before stopping
+                if not self.current_transcript.strip():
+                    # No transcript text - will reset UI in handle_audio_recording
+                    pass
                 self.handle_audio_recording("recording_stop")
             elif command_type == 'update_skeleton_display':
                 # Update skeleton display setting

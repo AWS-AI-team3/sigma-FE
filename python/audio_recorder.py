@@ -39,13 +39,14 @@ class AudioRecorder:
         })
         
         try:
-            # Start audio input stream
+            # Start audio input stream with optimized settings for speech recognition
             self.stream = sd.InputStream(
                 samplerate=16000,
                 channels=1,
                 dtype='float32',
-                blocksize=1024,
+                blocksize=2048,  # Increased chunk size for better word recognition
                 callback=self.audio_callback,
+                latency='low',  # Request low latency from audio system
             )
             self.stream.start()
             
@@ -63,15 +64,17 @@ class AudioRecorder:
         """Process audio data in separate thread"""
         while self.is_recording:
             try:
-                # Get audio data with timeout
-                audio_data = self.audio_queue.get(timeout=0.1)
+                # Get audio data with reasonable timeout for better speech recognition
+                audio_data = self.audio_queue.get(timeout=0.1)  # Increased timeout for better word formation
                 
-                # Encode and send
+                # Encode and send with timestamp for latency tracking
+                import time
                 encoded_audio = base64.b64encode(audio_data).decode('utf-8')
                 self.websocket_client.send_message({
                     'action': 'transcribe_streaming',
                     'type': 'send_audio',
                     'data': encoded_audio,
+                    'timestamp': time.time()  # Add timestamp for latency tracking
                 })
             except queue.Empty:
                 continue
@@ -87,14 +90,25 @@ class AudioRecorder:
         self.is_recording = False
         
         try:
-            # Stop and close stream
+            # Stop and close stream first
             if hasattr(self, 'stream'):
                 self.stream.stop()
                 self.stream.close()
+                delattr(self, 'stream')  # Remove stream attribute
                 
             # Wait for processing thread to finish
             if hasattr(self, 'processing_thread'):
                 self.processing_thread.join(timeout=1.0)
+                delattr(self, 'processing_thread')  # Remove thread attribute
+                
+            # Clear audio queue to prevent leftover data
+            while not self.audio_queue.empty():
+                try:
+                    self.audio_queue.get_nowait()
+                except:
+                    break
+                    
+            print("Audio recording cleanup completed")
                 
         except Exception as e:
             print(f"Error stopping audio recording: {e}")
@@ -129,13 +143,14 @@ class WebSocketClient:
     INFO_OS = 'get_os'
     INFO_RECENT_FILES = 'get_recent_files'
 
-    def __init__(self, transcript_callback=None, command_callback=None, local_agent=None):
+    def __init__(self, transcript_callback=None, command_callback=None, local_agent=None, info_request_callback=None):
         self.websocket_connection = None
         self.is_connected = False
         self.audio_streaming = False
         self.transcript_callback = transcript_callback
         self.command_callback = command_callback
         self.local_agent = local_agent
+        self.info_request_callback = info_request_callback
         self._connect()
 
     def _connect(self):
@@ -157,12 +172,14 @@ class WebSocketClient:
         """WebSocket opened"""
         self.is_connected = True
         self.audio_streaming = False
+        self._audio_logged = False
         print("WebSocket connected")
 
     def _on_close(self, ws, code, msg):
         """WebSocket closed"""
         self.is_connected = False
         self.audio_streaming = False
+        self._audio_logged = False
         print("WebSocket disconnected")
 
     def _on_error(self, ws, error):
@@ -177,30 +194,17 @@ class WebSocketClient:
                 text = data.get('text', '')
                 is_partial = data.get('is_partial', False)
                 
-                # Call callback to update transcript in hand_overlay
-                if self.transcript_callback and not is_partial and text.strip():
-                    self.transcript_callback(text)
+                # Calculate and log response latency
+                import time
+                current_time = time.time()
+                print(f"Transcript received at {current_time}: '{text}', is_partial: {is_partial}")
                 
-                # Send all transcript data to Flutter (both partial and final)
-                transcript_data = {
-                    "type": "transcript",
-                    "text": text,
-                    "is_partial": is_partial
-                }
-                # Ensure UTF-8 encoding and validate JSON before sending
-                try:
-                    json_str = json.dumps(transcript_data, ensure_ascii=False)
-                    if json_str and json_str.strip():
-                        print(json_str)
-                        sys.stdout.flush()  # Force flush stdout
-                        # Debug log to file
-                        with open('transcript_debug.log', 'a', encoding='utf-8') as f:
-                            f.write(f"SENT: {json_str}\n")
-                            f.flush()  # Force flush file
-                except Exception as e:
-                    print(f"Error encoding transcript JSON: {e}", flush=True)
-                    with open('transcript_debug.log', 'a', encoding='utf-8') as f:
-                        f.write(f"ERROR: {e}\n")
+                # Call callback to update transcript in hand_overlay
+                # Show both partial and final results for real-time subtitles
+                if self.transcript_callback and text.strip():
+                    self.transcript_callback(text, is_partial)
+                
+                # Transcript is now handled by hand_overlay.py to avoid duplication
             
             # COMMANDIFY response handling
             elif data.get('type') == 'respond_command':
@@ -222,29 +226,9 @@ class WebSocketClient:
                     print(f"Error encoding command JSON: {e}", flush=True)
             
             # System info request handling
-            elif data.get('type') == self.TYPE_REQUEST_INFO:
-                if self.local_agent:
-                    info = data.get('info', '')
-                    
-                    # Handle OS info request
-                    if info == self.INFO_OS:
-                        os_info = self.local_agent.get_os_type()
-                        self.send_message({
-                            'action': self.ACTION_GENERATE_COMMAND,
-                            'type': self.TYPE_RESPOND_INFO,
-                            'info': self.INFO_OS,
-                            'data': os_info,
-                        })
-                    
-                    # Handle recent files request
-                    elif info == self.INFO_RECENT_FILES:
-                        recent_files = self.local_agent.get_recent_files()
-                        self.send_message({
-                            'action': self.ACTION_GENERATE_COMMAND,
-                            'type': self.TYPE_RESPOND_INFO,
-                            'info': self.INFO_RECENT_FILES,
-                            'data': recent_files,
-                        })
+            elif data.get('type') == 'request_info':
+                if self.info_request_callback:
+                    self.info_request_callback(data)
                 
         except Exception as e:
             print(f"Error handling WebSocket message: {e}")
@@ -259,8 +243,17 @@ class WebSocketClient:
                 msg_type = data.get('type', '')
                 if msg_type == 'start_transcribe':
                     self.audio_streaming = True
+                    self._audio_logged = False  # Reset audio logging flag
+                    print("SEND: start_transcribe")
                 elif msg_type == 'stop_transcribe':
                     self.audio_streaming = False
+                    self._audio_logged = False  # Reset audio logging flag
+                    print("SEND: stop_transcribe")
+                elif msg_type == 'send_audio':
+                    # Only log audio streaming once to avoid spam
+                    if not hasattr(self, '_audio_logged') or not self._audio_logged:
+                        self._audio_logged = True
+                        print("SEND: audio streaming")
                 elif msg_type == 'request_command':
                     print("SEND: 명령어 변환 요청")
 

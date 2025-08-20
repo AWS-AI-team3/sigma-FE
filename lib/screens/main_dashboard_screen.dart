@@ -872,8 +872,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 snapshot.data!,
                                 width: 378,
                                 height: 378,
-                                fit: BoxFit.fill,
+                                fit: BoxFit.cover,  // Changed from fill to cover for better aspect ratio
                                 gaplessPlayback: true,
+                                filterQuality: FilterQuality.low,  // Added for better performance
+                                cacheWidth: 378,  // Cache at display size for memory efficiency
+                                cacheHeight: 378,
                               ),
                             );
                           } else {

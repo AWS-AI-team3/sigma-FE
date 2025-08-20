@@ -182,7 +182,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       print('카메라 프리뷰 해상도: ${previewSize.width}x${previewSize.height}');
       print('카메라 종횡비: ${_controller!.value.aspectRatio}');
       
-      // 실시간 카메라 프리뷰 (좌우반전, 가운데 정렬)
+      // 실시간 카메라 프리뷰 (가운데 정렬)
       return Container(
         width: 377,
         height: 377,
@@ -191,20 +191,17 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
-          child: Transform.scale(
-            scaleX: -1,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: SizedBox(
-                width: 377,
-                height: 377,
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _controller!.value.previewSize!.height,
-                    height: _controller!.value.previewSize!.width,
-                    child: CameraPreview(_controller!),
-                  ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: SizedBox(
+              width: 377,
+              height: 377,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.previewSize!.height,
+                  height: _controller!.value.previewSize!.width,
+                  child: CameraPreview(_controller!),
                 ),
               ),
             ),

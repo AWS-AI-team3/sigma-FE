@@ -93,256 +93,211 @@ class LoginLoadingScreenState extends State<LoginLoadingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5E5E5),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenWidth = constraints.maxWidth;
-          final screenHeight = constraints.maxHeight;
-          
-          // 고정된 윈도우 크기에 맞춰 컨테이너 크기 설정
-          final containerWidth = screenWidth * 0.85; // 약 408px
-          final containerHeight = screenHeight * 0.85; // 약 660px
-          
-          // 로고 크기를 윈도우 크기에 따라 조정 (1.2배 확대)
-          final logoSize = (containerWidth * 0.18).clamp(72.0, 120.0);
-          
-          // 고정된 폰트 크기 사용 (직접 수정 가능)
-          const double titleFontSize = 40.0;     // SIGMA 타이틀
-          const double subtitleFontSize = 11.0;  // Smart Interactive Gesture, Management Assistant
-          const double loadingFontSize = 28.0;   // 로그인 중입니다 텍스트
-          
-          return Container(
-            width: double.infinity,
-            height: double.infinity,
-            child: Center(
-              child: Container(
-                width: containerWidth,
-                height: containerHeight,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // 상단 로고 섹션 - 로그인 화면과 동일
-                    Container(
-                      width: double.infinity,
-                      height: containerHeight * 0.3, // 전체 높이의 30%
-                      padding: EdgeInsets.all(containerWidth * 0.04),
-                      child: _buildHeaderSection(
-                        logoSize: logoSize,
-                        titleFontSize: titleFontSize,
-                        subtitleFontSize: subtitleFontSize,
-                        containerWidth: containerWidth,
+                    // Logo
+                    Image.asset(
+                      'assets/images/sigma_logo.png',
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 23),
+                    
+                    // Smart Interactive Gesture text
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontFamily: 'AppleSDGothicNeo',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        children: const [
+                          TextSpan(
+                            text: 'S',
+                            style: TextStyle(color: Color(0xFF383AF4)),
+                          ),
+                          TextSpan(
+                            text: 'mart ',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          TextSpan(
+                            text: 'I',
+                            style: TextStyle(color: Color(0xFF383AF4)),
+                          ),
+                          TextSpan(
+                            text: 'nteractive ',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          TextSpan(
+                            text: 'G',
+                            style: TextStyle(color: Color(0xFF383AF4)),
+                          ),
+                          TextSpan(
+                            text: 'esture',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
                       ),
                     ),
                     
-                    // 로딩 섹션
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        margin: EdgeInsets.all(containerWidth * 0.04),
-                        padding: EdgeInsets.all(containerWidth * 0.06),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0EEFF),
-                          borderRadius: BorderRadius.circular(20),
+                    const SizedBox(height: 8),
+                    
+                    // SIGMA title
+                    Text(
+                      'SIGMA',
+                      style: const TextStyle(
+                        fontFamily: 'AppleSDGothicNeo',
+                        fontSize: 64,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                        height: 1.0,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Management Assistant text
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontFamily: 'AppleSDGothicNeo',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 로딩 인디케이터
-                            const CircularProgressIndicator(
+                        children: const [
+                          TextSpan(
+                            text: 'M',
+                            style: TextStyle(color: Color(0xFF383AF4)),
+                          ),
+                          TextSpan(
+                            text: 'anagement ',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          TextSpan(
+                            text: 'A',
+                            style: TextStyle(color: Color(0xFF383AF4)),
+                          ),
+                          TextSpan(
+                            text: 'ssistant',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 60),
+                    
+                    // Loading indicator and text replacing Google Sign In Button
+                    Container(
+                      width: 413,
+                      height: 59,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(
+                          color: const Color(0xFFDADCE0),
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Loading indicator
+                          const SizedBox(
+                            width: 26,
+                            height: 26,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.0,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF2E2981),
-                              ),
-                              strokeWidth: 3.0,
-                            ),
-                            
-                            const SizedBox(height: 40),
-                            
-                            // 로그인 중입니다 텍스트
-                            Text(
-                              '-로그인 중입니다-',
-                              style: GoogleFonts.roboto(
-                                fontSize: loadingFontSize,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF2E2981),
-                                height: 1.0,
+                                Color(0xFF383AF4),
                               ),
                             ),
-                            
-                            const SizedBox(height: 20),
-                            
-                            // 설명 텍스트
-                            Text(
-                              'Google 계정으로 인증 중...',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '로그인 중입니다...',
+                            style: GoogleFonts.roboto(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF3C4043),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          );
-        },
+            
+            // Bottom section with Euler, X, and AWS logos
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/euler_logo.png',
+                    width: 40,
+                    height: 14,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Text(
+                        'Euler',
+                        style: const TextStyle(
+                          fontFamily: 'AppleSDGothicNeo',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFB2B0B0),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Image.asset(
+                    'assets/images/x_logo.png',
+                    width: 8,
+                    height: 8,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 5.238,
+                        height: 5.238,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFB2B0B0),
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Image.asset(
+                    'assets/images/aws_logo.png',
+                    width: 24,
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.cloud,
+                        color: Color(0xFFB2B0B0),
+                        size: 24,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  // 헤더 섹션은 로그인 화면과 동일
-  Widget _buildHeaderSection({
-    required double logoSize,
-    required double titleFontSize,
-    required double subtitleFontSize,
-    required double containerWidth,
-  }) {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 로고
-          Container(
-            width: logoSize,
-            height: logoSize,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(logoSize / 2),
-              child: Image.asset(
-                'assets/images/sigma_logo.png',
-                width: logoSize,
-                height: logoSize,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: logoSize,
-                    height: logoSize,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4285F4),
-                      borderRadius: BorderRadius.circular(logoSize / 2),
-                    ),
-                    child: Icon(
-                      Icons.gesture,
-                      color: Colors.white,
-                      size: logoSize * 0.5,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          
-          SizedBox(width: containerWidth * 0.06),
-          
-          // 타이틀 섹션
-          _buildTitleSection(titleFontSize, subtitleFontSize),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTitleSection(double titleFontSize, double subtitleFontSize) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Smart Interactive Gesture 텍스트
-        RichText(
-          text: TextSpan(
-            style: GoogleFonts.poppins(
-              fontSize: subtitleFontSize,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
-            children: [
-              TextSpan(
-                text: 'S',
-                style: TextStyle(color: Color(0xFF0004FF)),
-              ),
-              TextSpan(
-                text: 'mart ',
-                style: TextStyle(color: Colors.black),
-              ),
-              TextSpan(
-                text: 'I',
-                style: TextStyle(color: Color(0xFF0004FF)),
-              ),
-              TextSpan(
-                text: 'nteractive ',
-                style: TextStyle(color: Colors.black),
-              ),
-              TextSpan(
-                text: 'G',
-                style: TextStyle(color: Color(0xFF0004FF)),
-              ),
-              TextSpan(
-                text: 'esture',
-                style: TextStyle(color: Colors.black),
-              ),
-            ],
-          ),
-        ),
-        
-        SizedBox(height: titleFontSize * 0.1),
-        
-        // SIGMA 메인 타이틀
-        Text(
-          'SIGMA',
-          style: GoogleFonts.inter(
-            fontSize: titleFontSize,
-            fontWeight: FontWeight.w900,
-            color: Colors.black,
-            height: 1.0,
-          ),
-        ),
-        
-        SizedBox(height: titleFontSize * 0.1),
-        
-        // Management Assistant 텍스트 - 오른쪽으로 이동
-        Padding(
-          padding: EdgeInsets.only(left: 72.0), // 왼쪽 패딩 추가로 오른쪽으로 이동
-          child: RichText(
-            text: TextSpan(
-              style: GoogleFonts.poppins(
-                fontSize: subtitleFontSize,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
-              children: [
-                TextSpan(
-                  text: 'M',
-                  style: TextStyle(color: Color(0xFF0004FF)),
-                ),
-                TextSpan(
-                  text: 'anagement ',
-                  style: TextStyle(color: Colors.black),
-                ),
-                TextSpan(
-                  text: 'A',
-                  style: TextStyle(color: Color(0xFF0004FF)),
-                ),
-                TextSpan(
-                  text: 'ssistant',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

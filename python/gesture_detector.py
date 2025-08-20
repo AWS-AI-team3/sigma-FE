@@ -14,13 +14,13 @@ class GestureDetector:
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
             max_num_hands=1,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.5
+            min_detection_confidence=0.6,  # Slightly reduced for faster detection
+            min_tracking_confidence=0.7    # Increased for more stable tracking
         )
         
         # Thresholds
-        self.pinch_threshold = 0.05
-        self.scroll_threshold = 0.07  # Larger threshold for scroll
+        self.pinch_threshold = 0.06  # Slightly increased for more reliable detection
+        self.scroll_threshold = 0.08  # Increased for smoother scroll initiation
         
         # Motion mapping configuration
         self.motion_mapping = motion_mapping or {

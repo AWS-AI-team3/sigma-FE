@@ -77,9 +77,16 @@ class PythonService {
             final decoded = utf8.decode(data);
             final lines = decoded.split('\n');
             
-            // Log all non-empty lines to see what's actually received (except camera_frame)
+            // Log only important non-empty lines (filter out routine messages)
             for (final line in lines) {
-              if (line.trim().isNotEmpty && !line.contains('camera_frame')) {
+              if (line.trim().isNotEmpty && 
+                  !line.contains('camera_frame') && 
+                  !line.contains('Camera') &&
+                  !line.contains('WebSocket Status') &&
+                  !line.contains('frame') &&
+                  !line.contains('Received stdin') &&
+                  !line.contains('WebSocket connected') &&
+                  line.trim().length < 200) {  // Skip very long lines
                 print('Python: $line');
               }
             }
@@ -107,8 +114,10 @@ class PythonService {
                 }
                 
                 final jsonData = json.decode(trimmedLine);
-                // Only log non-camera frame types to reduce noise
-                if (jsonData['type'] != 'camera_frame') {
+                // Only log important JSON types to reduce noise
+                if (jsonData['type'] != 'camera_frame' && 
+                    jsonData['type'] != 'gesture' &&
+                    !jsonData['type'].toString().contains('hold')) {
                   print('JSON parsed type: ${jsonData['type']}');
                 }
                 if (jsonData['type'] == 'camera_frame') {
