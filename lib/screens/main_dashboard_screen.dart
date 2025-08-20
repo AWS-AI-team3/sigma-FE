@@ -32,6 +32,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   String _currentSubtitle = '엄지와 약지를 붙이면 음성인식이 시작됩니다.';
   String _currentTranscript = '';
   bool _isCommandProcessing = false;
+  bool _isPythonRestarting = false; // Python 재시작 중 상태
+  String _cameraStreamKey = 'camera_0'; // 카메라 스트림 재생성을 위한 키
   
   // 스트림 구독
   StreamSubscription<String>? _gestureSubscription;
@@ -202,10 +204,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     }
   }
 
-  // 설정 변경 시 실시간으로 적용하는 함수
-  Future<void> _applySettingChange(Function updateFunction) async {
-    updateFunction();
-    
+  // 저장 버튼 클릭 시 설정을 저장하고 Python 재시작
+  Future<void> _saveSettings() async {
     final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
     try {
       // 설정을 서버에 저장
@@ -213,19 +213,71 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       
       // Python 프로세스가 실행 중인 경우에만 재시작
       if (PythonService.isTracking) {
+        setState(() {
+          _isPythonRestarting = true;
+        });
+        
         print('트래킹 중이므로 Python 프로세스를 재시작합니다.');
+        
+        // 기존 스트림 구독 정리
+        _gestureSubscription?.cancel();
+        _transcriptSubscription?.cancel();
+        _commandSubscription?.cancel();
+        
+        // Python 프로세스 정리 및 스트림 컨트롤러 재생성
         await PythonService.cleanup();
-        await Future.delayed(const Duration(milliseconds: 300));
+        await Future.delayed(const Duration(milliseconds: 500)); // 충분한 대기 시간
         
         // 새로운 설정으로 다시 시작
-        await PythonService.startHandTracking(
+        final success = await PythonService.startHandTracking(
           showSkeleton: settingsProvider.showSkeleton
         );
+        
+        if (success) {
+          // 새로운 스트림들에 다시 구독
+          _startGestureListening();
+          _startTranscriptListening();
+          _startCommandListening();
+          
+          setState(() {
+            _isPythonRestarting = false;
+            _cameraStreamKey = 'camera_${DateTime.now().millisecondsSinceEpoch}'; // 새로운 키로 강제 리빌드
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('설정이 저장되고 적용되었습니다'),
+              backgroundColor: Color(0xFF5381F6),
+            ),
+          );
+        } else {
+          setState(() {
+            _isPythonRestarting = false;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Python 재시작에 실패했습니다'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
-        print('트래킹이 시작되지 않았으므로 설정만 저장합니다.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('설정이 저장되었습니다'),
+            backgroundColor: Color(0xFF5381F6),
+          ),
+        );
       }
     } catch (e) {
-      print('설정 적용 실패: $e');
+      print('설정 저장 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('설정 저장에 실패했습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -490,7 +542,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               '좌클릭',
                               settingsProvider.leftClickValue,
                               (value) {
-                                _applySettingChange(() => settingsProvider.setLeftClickValue(value));
+                                settingsProvider.setLeftClickValue(value);
                               },
                             ),
                             
@@ -511,7 +563,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               '우클릭',
                               settingsProvider.rightClickValue,
                               (value) {
-                                _applySettingChange(() => settingsProvider.setRightClickValue(value));
+                                settingsProvider.setRightClickValue(value);
                               },
                             ),
                             
@@ -532,7 +584,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               '붙여넣기',
                               settingsProvider.wheelScrollValue,
                               (value) {
-                                _applySettingChange(() => settingsProvider.setWheelScrollValue(value));
+                                settingsProvider.setWheelScrollValue(value);
                               },
                             ),
                           ],
@@ -597,7 +649,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    _applySettingChange(() => settingsProvider.setShowSkeleton(!settingsProvider.showSkeleton));
+                                    settingsProvider.setShowSkeleton(!settingsProvider.showSkeleton);
                                   },
                                   child: Container(
                                     width: 42,
@@ -633,6 +685,56 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                               ],
                             ),
                           ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 저장 버튼
+                      Container(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: _saveSettings,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment(0.00, 0.22),
+                                end: Alignment(0.97, 1.00),
+                                colors: [Color(0xFF578EF6), Color(0xFF496BF5), Color(0xFF383AF4)],
+                              ),
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '설정 저장',
+                                style: TextStyle(
+                                  fontFamily: 'AppleSDGothicNeo',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -863,32 +965,63 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
               child: _isCameraEnabled
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(15),
-                      child: StreamBuilder<Uint8List>(
-                        stream: PythonService.cameraStream,
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData && snapshot.data != null) {
-                            return ClipRect(
-                              child: Image.memory(
-                                snapshot.data!,
-                                width: 378,
-                                height: 378,
-                                fit: BoxFit.cover,  // Changed from fill to cover for better aspect ratio
-                                gaplessPlayback: true,
-                                filterQuality: FilterQuality.low,  // Added for better performance
-                                cacheWidth: 378,  // Cache at display size for memory efficiency
-                                cacheHeight: 378,
-                              ),
-                            );
-                          } else {
-                            return Image.asset(
-                              'assets/images/camera_area.png',
-                              width: 378,
-                              height: 378,
-                              fit: BoxFit.cover,
-                            );
-                          }
-                        },
-                      ),
+                      child: _isPythonRestarting
+                          ? Stack(
+                              children: [
+                                Image.asset(
+                                  'assets/images/camera_area.png',
+                                  width: 378,
+                                  height: 378,
+                                  fit: BoxFit.cover,
+                                ),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        color: Color(0xFF5381F6),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Text(
+                                        '설정 적용 중...',
+                                        style: TextStyle(
+                                          fontFamily: 'AppleSDGothicNeo',
+                                          fontSize: 14,
+                                          color: Color(0xFF7A7A7A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : StreamBuilder<Uint8List>(
+                              key: ValueKey(_cameraStreamKey), // 강제 리빌드를 위한 키
+                              stream: PythonService.cameraStream,
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  return ClipRect(
+                                    child: Image.memory(
+                                      snapshot.data!,
+                                      width: 378,
+                                      height: 378,
+                                      fit: BoxFit.cover,
+                                      gaplessPlayback: true,
+                                      filterQuality: FilterQuality.low,
+                                      cacheWidth: 378,
+                                      cacheHeight: 378,
+                                    ),
+                                  );
+                                } else {
+                                  return Image.asset(
+                                    'assets/images/camera_area.png',
+                                    width: 378,
+                                    height: 378,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                              },
+                            ),
                     )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(15),
