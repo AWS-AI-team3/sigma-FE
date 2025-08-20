@@ -44,7 +44,7 @@ class AudioRecorder:
                 samplerate=16000,
                 channels=1,
                 dtype='float32',
-                blocksize=2048,  # Increased chunk size for better word recognition
+                blocksize=1024,  # Increased chunk size for better word recognition
                 callback=self.audio_callback,
                 latency='low',  # Request low latency from audio system
             )
