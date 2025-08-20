@@ -2,6 +2,8 @@
 
 ## 실행 방법
 
+프로젝트 루트에 .env 두기
+
 ```bash
 #uv 설치
 pip install uv
