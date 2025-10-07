@@ -4,9 +4,11 @@ import '../screens/login_loading_screen.dart';
 import '../screens/face_registration_screen.dart';
 import '../screens/face_enrollment_screen.dart';
 import '../screens/main_dashboard_screen.dart';
+import '../screens/gesture_control_screen.dart';
 
 class AppRoutes {
-  static const String login = '/';
+  static const String gestureControl = '/';  // 제스처 제어 화면을 시작 화면으로
+  static const String login = '/login';
   static const String loginLoading = '/login-loading';
   static const String faceRegistration = '/face-registration';
   static const String faceEnrollment = '/face-enrollment';
@@ -14,7 +16,8 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> get routes {
     return {
-      '/': (context) => const LoginScreen(),
+      '/': (context) => const GestureControlScreen(),
+      '/login': (context) => const LoginScreen(),
       '/login-loading': (context) => const LoginLoadingScreen(),
       '/face-registration': (context) => const FaceRegistrationScreen(),
       '/face-enrollment': (context) => const FaceEnrollmentScreen(),
@@ -25,6 +28,8 @@ class AppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/':
+        return MaterialPageRoute(builder: (context) => const GestureControlScreen());
+      case '/login':
         return MaterialPageRoute(builder: (context) => const LoginScreen());
       case '/login-loading':
         return MaterialPageRoute(builder: (context) => const LoginLoadingScreen());
