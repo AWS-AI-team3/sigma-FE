@@ -8,7 +8,9 @@
       "mcp__figma-dev-mode-mcp-server__get_image",
       "Bash(flutter build:*)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(adb logcat:*)",
+      "Bash(adb:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

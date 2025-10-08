@@ -13,24 +13,29 @@ class AppLifecycleManager {
   /// 앱 초기화 및 윈도우 설정
   static Future<void> initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
-    await windowManager.ensureInitialized();
-    
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(windowWidth, windowHeight),
-      minimumSize: Size(windowWidth, windowHeight),
-      maximumSize: Size(windowWidth, windowHeight),
-      center: true,
-      title: 'SIGMA',
-    );
-    
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-      
-      // Handle window close event
-      await windowManager.setPreventClose(true);
-      windowManager.addListener(AppWindowListener());
-    });
+
+    // Windows/macOS/Linux에서만 window_manager 사용
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      await windowManager.ensureInitialized();
+
+      WindowOptions windowOptions = const WindowOptions(
+        size: Size(windowWidth, windowHeight),
+        minimumSize: Size(windowWidth, windowHeight),
+        maximumSize: Size(windowWidth, windowHeight),
+        center: true,
+        title: 'SIGMA',
+      );
+
+      await windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+
+        // Handle window close event
+        await windowManager.setPreventClose(true);
+        windowManager.addListener(AppWindowListener());
+      });
+    }
+    // Android/iOS에서는 초기화만
   }
 
   /// Python 프로세스 정리
@@ -70,8 +75,13 @@ class AppLifecycleManager {
   /// 앱 종료 처리
   static Future<void> handleAppTermination() async {
     await cleanupPythonProcesses();
-    await windowManager.setPreventClose(false);
-    await windowManager.close();
+
+    // Windows/macOS/Linux에서만 windowManager 사용
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      await windowManager.setPreventClose(false);
+      await windowManager.close();
+    }
+
     exit(0);
   }
 }
