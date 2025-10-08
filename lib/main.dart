@@ -59,7 +59,7 @@ class _SigmaAppState extends State<SigmaApp> with AppLifecycleMixin {
       child: MaterialApp(
         title: AppConstants.appTitle,
         theme: AppTheme.lightTheme,
-        initialRoute: AppRoutes.login,
+        initialRoute: AppRoutes.gestureControl,  // 제스처 제어 화면으로 시작
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.onGenerateRoute,
         debugShowCheckedModeBanner: false,
