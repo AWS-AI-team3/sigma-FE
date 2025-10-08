@@ -107,12 +107,21 @@ class GestureServiceModule : FlutterPlugin, MethodChannel.MethodCallHandler {
      * Accessibility Service가 활성화되어 있는지 확인
      */
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val serviceName = "${context.packageName}/.AccessibilityGestureService"
+        // 두 가지 형식 모두 확인: 짧은 형식과 전체 형식
+        val shortName = "${context.packageName}/.AccessibilityGestureService"
+        val fullName = "${context.packageName}/${context.packageName}.AccessibilityGestureService"
+
         val enabledServices = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
-        return enabledServices?.contains(serviceName) == true
+
+        // 디버깅용 로그
+        android.util.Log.d("GestureServiceModule", "Checking: $shortName or $fullName")
+        android.util.Log.d("GestureServiceModule", "Enabled: $enabledServices")
+
+        return enabledServices?.contains(shortName) == true ||
+               enabledServices?.contains(fullName) == true
     }
 
     /**
