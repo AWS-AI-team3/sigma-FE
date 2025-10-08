@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/gesture_control_service.dart';
 
 /// 제스처 제어 서비스 화면 - 간단하고 명확한 UI
@@ -13,6 +14,7 @@ class _GestureControlScreenState extends State<GestureControlScreen> {
   bool isServiceRunning = false;
   bool hasOverlayPermission = false;
   bool hasAccessibilityPermission = false;
+  bool hasCameraPermission = false;
 
   @override
   void initState() {
@@ -22,41 +24,75 @@ class _GestureControlScreenState extends State<GestureControlScreen> {
 
   /// 권한 상태 확인
   Future<void> _checkPermissions() async {
-    final overlay = await GestureControlService.checkOverlayPermission();
-    final accessibility = await GestureControlService.checkAccessibilityEnabled();
+    try {
+      final overlay = await GestureControlService.checkOverlayPermission();
+      final accessibility = await GestureControlService.checkAccessibilityEnabled();
+      final camera = await Permission.camera.isGranted;
 
-    setState(() {
-      hasOverlayPermission = overlay;
-      hasAccessibilityPermission = accessibility;
-    });
+      if (mounted) {
+        setState(() {
+          hasOverlayPermission = overlay;
+          hasAccessibilityPermission = accessibility;
+          hasCameraPermission = camera;
+        });
+      }
+    } catch (e) {
+      print('Error checking permissions: $e');
+    }
+  }
+
+  /// 카메라 권한 요청
+  Future<void> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (mounted) {
+      setState(() {
+        hasCameraPermission = status.isGranted;
+      });
+    }
   }
 
   /// 서비스 시작/정지 토글
   Future<void> _toggleService() async {
-    if (isServiceRunning) {
-      // 서비스 정지
-      await GestureControlService.stopService();
-      setState(() {
-        isServiceRunning = false;
-      });
-    } else {
-      // 권한 확인 후 서비스 시작
-      await _checkPermissions();
+    try {
+      if (isServiceRunning) {
+        // 서비스 정지
+        await GestureControlService.stopService();
+        if (mounted) {
+          setState(() {
+            isServiceRunning = false;
+          });
+        }
+      } else {
+        // 권한 확인 후 서비스 시작
+        await _checkPermissions();
 
-      if (!hasOverlayPermission) {
-        _showPermissionDialog('오버레이 권한이 필요합니다');
-        return;
+        if (!hasCameraPermission) {
+          _showPermissionDialog('카메라 권한이 필요합니다. 권한을 허용해주세요.');
+          return;
+        }
+
+        if (!hasOverlayPermission) {
+          _showPermissionDialog('오버레이 권한이 필요합니다');
+          return;
+        }
+
+        if (!hasAccessibilityPermission) {
+          _showPermissionDialog('접근성 권한이 필요합니다');
+          return;
+        }
+
+        final success = await GestureControlService.startService();
+        if (mounted) {
+          setState(() {
+            isServiceRunning = success;
+          });
+        }
       }
-
-      if (!hasAccessibilityPermission) {
-        _showPermissionDialog('접근성 권한이 필요합니다');
-        return;
+    } catch (e) {
+      print('Error toggling service: $e');
+      if (mounted) {
+        _showPermissionDialog('서비스 시작 중 오류 발생: $e');
       }
-
-      final success = await GestureControlService.startService();
-      setState(() {
-        isServiceRunning = success;
-      });
     }
   }
 
@@ -145,6 +181,14 @@ class _GestureControlScreenState extends State<GestureControlScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            _buildPermissionRow(
+              '카메라 권한',
+              hasCameraPermission,
+              () async {
+                await _requestCameraPermission();
+              },
+            ),
+            const SizedBox(height: 12),
             _buildPermissionRow(
               '오버레이 권한',
               hasOverlayPermission,
