@@ -10,9 +10,22 @@
 		212898142E9797ED00A504AE /* sigma.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sigma.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2128982B2E97994A00A504AE /* Exceptions for "sigma" folder in "sigma" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 212898132E9797ED00A504AE /* sigma */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		212898162E9797ED00A504AE /* sigma */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2128982B2E97994A00A504AE /* Exceptions for "sigma" folder in "sigma" target */,
+			);
 			path = sigma;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,8 @@
 				DEVELOPMENT_TEAM = ATZJHBB955;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = sigma/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "제스처 인식을 통한 커서 제어를 위해 카메라가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +303,8 @@
 				DEVELOPMENT_TEAM = ATZJHBB955;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = sigma/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "제스처 인식을 통한 커서 제어를 위해 카메라가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

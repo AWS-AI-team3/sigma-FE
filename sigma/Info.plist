@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>제스처 인식을 통한 웹 브라우징을 위해 카메라 접근이 필요합니다.</string>
+	
+	<!-- iPad 고성능 최적화 설정 -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+		<string>metal</string>
+	</array>
+	
+	<!-- ProMotion 120Hz 지원 -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	
+	<!-- Neural Engine 최적화 -->
+	<key>MLModelAssetMaxCacheSize</key>
+	<integer>104857600</integer>
+	
+	<!-- 메모리 최적화 -->
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
+	
+	<!-- iPad 전용 최적화 -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	
+	<!-- Metal 성능 셰이더 컴파일 -->
+	<key>MTLCompileTimeStatisticsEnabled</key>
+	<true/>
+	
+	<!-- 고성능 그래픽 모드 -->
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
+</plist>

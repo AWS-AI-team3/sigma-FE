@@ -6,15 +6,22 @@
 //
 
 import SwiftUI
+import Combine
 
 struct Message: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let content: String
     let isUser: Bool
     let timestamp: Date
+    
+    init(content: String, isUser: Bool, timestamp: Date) {
+        self.id = UUID()
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+    }
 }
 
-@MainActor
 class ChatBotManager: ObservableObject {
     @Published var messages: [Message] = [
         Message(content: "안녕하세요! 무엇을 도와드릴까요?", isUser: false, timestamp: Date())
@@ -33,11 +40,12 @@ class ChatBotManager: ObservableObject {
         isTyping = true
         
         // 간단한 챗봇 응답 로직
-        Task {
+        Task { @MainActor in
             await processMessage(messageToProcess)
         }
     }
     
+    @MainActor
     private func processMessage(_ message: String) async {
         // 1-2초 딜레이로 실제 챗봇처럼 보이게 함
         try? await Task.sleep(nanoseconds: UInt64.random(in: 1_000_000_000...2_000_000_000))
@@ -87,6 +95,31 @@ struct ChatBotView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
+                
+                // 제스처 상태 표시
+                if gestureManager.isRunning {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(gestureManager.handConfidence > 0.6 ? .green : 
+                                     gestureManager.handConfidence > 0.4 ? .orange : .red)
+                                .frame(width: 8, height: 8)
+                            Text("정확도: \(Int(gestureManager.handConfidence * 100))%")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "waveform")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text("안정성: \(Int(gestureManager.gestureStability * 100))%")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
                 Button(action: {
                     chatManager.messages = [Message(content: "안녕하세요! 무엇을 도와드릴까요?", isUser: false, timestamp: Date())]
                 }) {

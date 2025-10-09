@@ -6,21 +6,22 @@
 //
 
 import SwiftUI
+import Combine
 
 struct Bookmark: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var url: String
     var createdAt: Date
     
     init(title: String, url: String) {
+        self.id = UUID()
         self.title = title
         self.url = url
         self.createdAt = Date()
     }
 }
 
-@MainActor
 class BookmarksManager: ObservableObject {
     @Published var bookmarks: [Bookmark] = []
     @Published var showingAddBookmark = false
