@@ -32,6 +32,7 @@ class HandDetectionResult {
 enum GestureState {
   idle,
   twoPinch,     // 2핑거 핀치 (엄지+검지): 클릭 대기
+  dragging,     // 드래그 중
   threePinch,   // 3핑거 핀치 (엄지+검지+중지): 스크롤/스와이프 대기
   scrolling,    // 스크롤 중
 }
@@ -55,12 +56,14 @@ class HandLandmarkerService {
   static const double SMOOTHING_FACTOR = 0.3;  // 0~1, 낮을수록 부드러움
 
   // Pinch detection thresholds
-  static const double PINCH_THRESHOLD = 0.04;  // 핀치 감지 거리 (0.05 -> 0.04, 더 가까워야 인식)
-  static const double DEADZONE_RADIUS = 0.08;  // 떨림 방지 영역 (0.03 -> 0.08, 더 크게 움직여야 인식)
+  static const double PINCH_THRESHOLD = 0.04;  // 2핑거 핀치 감지 거리
+  static const double THREE_PINCH_THRESHOLD = 0.02;  // 3핑거 핀치 감지 거리 (더 가까워야)
+  static const double DRAG_THRESHOLD = 0.05;  // 드래그 시작 거리
+  static const double DEADZONE_RADIUS = 0.11;  // 떨림 방지 영역
 
   // Scroll/Swipe thresholds
-  static const double SWIPE_THRESHOLD = 0.15;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
-  static const double SCROLL_SPEED_MULTIPLIER = 0.01;  // Y축 이동 거리 → 스크롤 속도
+  static const double SWIPE_THRESHOLD = 0.3;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
+  static const double SCROLL_SPEED_MULTIPLIER = 50.0;  // Y축 이동 거리 → 스크롤 픽셀 (0.1 이동 = 30px)
   static const int SWIPE_COOLDOWN_MS = 800;  // 쿨다운 증가 (500 -> 800)
 
   Future<void> initialize() async {
@@ -156,7 +159,8 @@ class HandLandmarkerService {
     final middleIndexDist = _calculateDistance(middleTip, indexTip);
 
     final isTwoPinch = thumbIndexDist < PINCH_THRESHOLD;  // 엄지+검지
-    final isThreePinch = isTwoPinch && middleIndexDist < PINCH_THRESHOLD;  // 엄지+검지+중지
+    final isThreePinch = thumbIndexDist < THREE_PINCH_THRESHOLD &&
+                        middleIndexDist < THREE_PINCH_THRESHOLD;  // 엄지+검지+중지 (더 엄격)
 
     switch (_currentState) {
       case GestureState.idle:
@@ -178,7 +182,13 @@ class HandLandmarkerService {
         break;
 
       case GestureState.twoPinch:
-        if (!isTwoPinch) {
+        if (isThreePinch) {
+          // 2핑거 → 3핑거 전환 (중지 추가)
+          _currentState = GestureState.threePinch;
+          _gestureStartPosition = pointerPosition;
+          gesture = '3핑거 대기';
+          debugPrint('✋ 2-PINCH → 3-PINCH');
+        } else if (!isTwoPinch) {
           // 핀치 해제 → 클릭!
           _currentState = GestureState.idle;
           _gestureStartPosition = null;
@@ -186,13 +196,44 @@ class HandLandmarkerService {
           debugPrint('✋ CLICK at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
           _lastGestureTime = now;
         } else {
-          gesture = '2핑거 (떼면 클릭)';
+          // 2핑거 유지 중 - 이동 거리 확인
+          final dx = pointerPosition.dx - _gestureStartPosition!.dx;
+          final dy = pointerPosition.dy - _gestureStartPosition!.dy;
+          final distance = dart_math.sqrt(dx * dx + dy * dy);
+
+          if (distance > DRAG_THRESHOLD) {
+            // 일정 거리 이상 이동 → 드래그 시작
+            _currentState = GestureState.dragging;
+            gesture = '드래그!';
+            debugPrint('✋ DRAG START: distance=${distance.toStringAsFixed(3)}');
+          } else {
+            gesture = '2핑거 (떼면 클릭)';
+          }
+        }
+        break;
+
+      case GestureState.dragging:
+        if (!isTwoPinch) {
+          // 핀치 해제 → 드래그 종료
+          _currentState = GestureState.idle;
+          _gestureStartPosition = null;
+          gesture = '드래그 완료';
+          debugPrint('✋ DRAG END');
+        } else {
+          // 드래그 중 - 계속 위치 업데이트
+          gesture = '드래그!';
         }
         break;
 
       case GestureState.threePinch:
-        if (!isThreePinch) {
-          // 3핑거 해제 → idle로 복귀
+        if (!isThreePinch && isTwoPinch) {
+          // 3핑거 → 2핑거 전환 (중지 뗌)
+          _currentState = GestureState.twoPinch;
+          _gestureStartPosition = pointerPosition;
+          gesture = '2핑거 (떼면 클릭)';
+          debugPrint('✋ 3-PINCH → 2-PINCH');
+        } else if (!isThreePinch && !isTwoPinch) {
+          // 완전 해제 → idle로 복귀
           _currentState = GestureState.idle;
           _gestureStartPosition = null;
           gesture = '3핑거 해제';
@@ -209,8 +250,8 @@ class HandLandmarkerService {
           } else if (dx.abs() > dy.abs()) {
             // X축 우세 → 스와이프
             if (dx.abs() > SWIPE_THRESHOLD && timeSinceLastGesture > SWIPE_COOLDOWN_MS) {
-              gesture = dx > 0 ? '오른쪽 스와이프!' : '왼쪽 스와이프!';
-              debugPrint('✋ SWIPE ${dx > 0 ? "RIGHT" : "LEFT"}: dx=${dx.toStringAsFixed(3)}');
+              gesture = dx > 0 ? '왼쪽 스와이프!' : '오른쪽 스와이프!';
+              debugPrint('✋ SWIPE ${dx > 0 ? "LEFT" : "RIGHT"}: dx=${dx.toStringAsFixed(3)}');
               _lastGestureTime = now;
               _gestureStartPosition = pointerPosition;  // 연속 스와이프 방지를 위해 위치 리셋
             } else {

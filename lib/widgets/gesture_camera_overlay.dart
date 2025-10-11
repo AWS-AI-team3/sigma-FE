@@ -6,7 +6,7 @@ import '../services/hand_landmarker_service.dart';
 
 class GestureCameraOverlay extends StatefulWidget {
   final Function(Offset) onGestureClick;
-  final Function(String) onGestureSwipe;
+  final Function(String, {int? scrollAmount}) onGestureSwipe;
 
   const GestureCameraOverlay({
     super.key,
@@ -148,7 +148,11 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
           }
 
           // Handle gestures
-          if (result.gesture.contains('클릭') && _pointerPosition != null) {
+          if (result.gesture == '클릭!' && _pointerPosition != null) {
+            // 정확히 '클릭!' 제스처일 때만 (한 번만 발생)
+            widget.onGestureClick(_pointerPosition!);
+          } else if (result.gesture.contains('드래그') && _pointerPosition != null) {
+            // 드래그 중에는 계속 클릭 위치를 업데이트
             widget.onGestureClick(_pointerPosition!);
           } else if (result.gesture.contains('스와이프')) {
             if (result.gesture.contains('왼쪽')) {
@@ -160,10 +164,12 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
             // 스크롤 속도 추출 (예: "스크롤! (50)" -> 50)
             final match = RegExp(r'스크롤.*?\((-?\d+)\)').firstMatch(result.gesture);
             if (match != null) {
-              final scrollSpeed = int.parse(match.group(1)!);
-              // 양수 = 아래로 이동 = 위로 스크롤 (up scroll)
-              // 음수 = 위로 이동 = 아래로 스크롤 (down scroll)
-              widget.onGestureSwipe(scrollSpeed > 0 ? 'up' : 'down');
+              final scrollAmount = int.parse(match.group(1)!);
+              // 양수 = 아래로 이동 = 아래로 스크롤 (down scroll)
+              // 음수 = 위로 이동 = 위로 스크롤 (up scroll)
+              final direction = scrollAmount > 0 ? 'down' : 'up';
+              debugPrint('📜 SCROLL overlay: amount=$scrollAmount, dir=$direction');
+              widget.onGestureSwipe(direction, scrollAmount: scrollAmount.abs());
             }
           }
         });

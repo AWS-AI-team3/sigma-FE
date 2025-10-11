@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ''');
   }
 
-  void _handleGestureSwipe(String direction) {
+  void _handleGestureSwipe(String direction, {int? scrollAmount}) {
     switch (direction) {
       case 'left':
         _webViewController.goForward();
@@ -132,10 +132,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _webViewController.goBack();
         break;
       case 'up':
-        _webViewController.scrollBy(0, -300);
+        // 스크롤 양이 있으면 사용, 없으면 기본값
+        final amount = scrollAmount ?? 50;
+        _webViewController.scrollBy(0, -amount);
         break;
       case 'down':
-        _webViewController.scrollBy(0, 300);
+        final amount = scrollAmount ?? 50;
+        _webViewController.scrollBy(0, amount);
         break;
     }
   }
