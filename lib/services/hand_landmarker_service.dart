@@ -1,0 +1,275 @@
+import 'dart:async';
+import 'dart:math' as dart_math;
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+
+class HandLandmark {
+  final double x;
+  final double y;
+  final double z;
+
+  HandLandmark(this.x, this.y, this.z);
+}
+
+class HandDetectionResult {
+  final List<HandLandmark> landmarks;
+  final String gesture;
+  final Offset? pointerPosition;
+  final bool isCameraAtTop;
+  final Offset? thumbTipPosition;
+  final Offset? indexTipPosition;
+
+  HandDetectionResult({
+    required this.landmarks,
+    this.gesture = '감지 중',
+    this.pointerPosition,
+    this.isCameraAtTop = false,
+    this.thumbTipPosition,
+    this.indexTipPosition,
+  });
+}
+
+enum GestureState {
+  idle,
+  twoPinch,     // 2핑거 핀치 (엄지+검지): 클릭 대기
+  threePinch,   // 3핑거 핀치 (엄지+검지+중지): 스크롤/스와이프 대기
+  scrolling,    // 스크롤 중
+}
+
+class HandLandmarkerService {
+  static const MethodChannel _channel = MethodChannel('gesture_browser/hand_landmarker');
+  static const EventChannel _eventChannel = EventChannel('gesture_browser/hand_landmarks');
+
+  List<HandLandmark>? _lastLandmarks;
+  DateTime? _lastGestureTime;
+  Offset? _swipeStartPosition;
+  StreamSubscription? _subscription;
+  Function(HandDetectionResult)? _onResultCallback;
+
+  // Gesture state tracking
+  GestureState _currentState = GestureState.idle;
+  Offset? _gestureStartPosition;
+
+  // Cursor smoothing (손떨림 보정)
+  Offset? _lastSmoothedPosition;
+  static const double SMOOTHING_FACTOR = 0.3;  // 0~1, 낮을수록 부드러움
+
+  // Pinch detection thresholds
+  static const double PINCH_THRESHOLD = 0.04;  // 핀치 감지 거리 (0.05 -> 0.04, 더 가까워야 인식)
+  static const double DEADZONE_RADIUS = 0.08;  // 떨림 방지 영역 (0.03 -> 0.08, 더 크게 움직여야 인식)
+
+  // Scroll/Swipe thresholds
+  static const double SWIPE_THRESHOLD = 0.15;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
+  static const double SCROLL_SPEED_MULTIPLIER = 0.01;  // Y축 이동 거리 → 스크롤 속도
+  static const int SWIPE_COOLDOWN_MS = 800;  // 쿨다운 증가 (500 -> 800)
+
+  Future<void> initialize() async {
+    try {
+      await _channel.invokeMethod('initialize');
+
+      _subscription = _eventChannel.receiveBroadcastStream().listen((data) {
+        if (data == null) {
+          _onResultCallback?.call(HandDetectionResult(landmarks: []));
+          return;
+        }
+
+        final dataMap = data as Map;
+        final landmarksData = dataMap['landmarks'] as List;
+        final isCameraAtTop = dataMap['isCameraAtTop'] as bool? ?? false;
+
+        List<HandLandmark> landmarks = landmarksData.map((lm) {
+          final map = lm as Map;
+          return HandLandmark(
+            (map['x'] as num).toDouble(),
+            (map['y'] as num).toDouble(),
+            (map['z'] as num).toDouble(),
+          );
+        }).toList();
+
+        final result = _analyzeGesture(landmarks, isCameraAtTop);
+        _onResultCallback?.call(result);
+      });
+
+      debugPrint('HandLandmarker initialized successfully');
+    } catch (e) {
+      debugPrint('Error initializing HandLandmarker: $e');
+      rethrow;
+    }
+  }
+
+  void setResultCallback(Function(HandDetectionResult) callback) {
+    _onResultCallback = callback;
+  }
+
+  Future<void> startDetection() async {
+    try {
+      await _channel.invokeMethod('startDetection');
+    } catch (e) {
+      debugPrint('Error starting detection: $e');
+    }
+  }
+
+  Future<void> stopDetection() async {
+    try {
+      await _channel.invokeMethod('stopDetection');
+    } catch (e) {
+      debugPrint('Error stopping detection: $e');
+    }
+  }
+
+  HandDetectionResult _analyzeGesture(List<HandLandmark> landmarks, bool isCameraAtTop) {
+    if (landmarks.isEmpty || landmarks.length < 21) {
+      _resetGestureState();
+      return HandDetectionResult(landmarks: landmarks, isCameraAtTop: isCameraAtTop);
+    }
+
+    final indexTip = landmarks[8];
+    final indexMCP = landmarks[5];
+    final thumbTip = landmarks[4];
+    final middleTip = landmarks[12];
+    final wrist = landmarks[0];
+
+    // 커서: 엄지와 검지 사이 중점
+    final rawPointerPosition = Offset(
+      (thumbTip.x + indexTip.x) / 2,
+      (thumbTip.y + indexTip.y) / 2,
+    );
+
+    // 커서 스무딩 (손떨림 보정)
+    final pointerPosition = _lastSmoothedPosition == null
+        ? rawPointerPosition
+        : Offset(
+            _lastSmoothedPosition!.dx + (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
+            _lastSmoothedPosition!.dy + (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+          );
+    _lastSmoothedPosition = pointerPosition;
+
+    String gesture = '대기 중';
+
+    final now = DateTime.now();
+    final timeSinceLastGesture = _lastGestureTime != null
+        ? now.difference(_lastGestureTime!).inMilliseconds
+        : 999999;
+
+    // 핀치 감지
+    final thumbIndexDist = _calculateDistance(thumbTip, indexTip);
+    final middleIndexDist = _calculateDistance(middleTip, indexTip);
+
+    final isTwoPinch = thumbIndexDist < PINCH_THRESHOLD;  // 엄지+검지
+    final isThreePinch = isTwoPinch && middleIndexDist < PINCH_THRESHOLD;  // 엄지+검지+중지
+
+    switch (_currentState) {
+      case GestureState.idle:
+        if (isThreePinch) {
+          // 3핑거 핀치 시작: 스크롤/스와이프 대기
+          _currentState = GestureState.threePinch;
+          _gestureStartPosition = pointerPosition;
+          gesture = '3핑거 대기';
+          debugPrint('✋ 3-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+        } else if (isTwoPinch) {
+          // 2핑거 핀치 시작: 클릭 대기
+          _currentState = GestureState.twoPinch;
+          _gestureStartPosition = pointerPosition;
+          gesture = '2핑거 대기';
+          debugPrint('✋ 2-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+        } else {
+          gesture = '손 감지됨';
+        }
+        break;
+
+      case GestureState.twoPinch:
+        if (!isTwoPinch) {
+          // 핀치 해제 → 클릭!
+          _currentState = GestureState.idle;
+          _gestureStartPosition = null;
+          gesture = '클릭!';
+          debugPrint('✋ CLICK at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+          _lastGestureTime = now;
+        } else {
+          gesture = '2핑거 (떼면 클릭)';
+        }
+        break;
+
+      case GestureState.threePinch:
+        if (!isThreePinch) {
+          // 3핑거 해제 → idle로 복귀
+          _currentState = GestureState.idle;
+          _gestureStartPosition = null;
+          gesture = '3핑거 해제';
+          debugPrint('✋ 3-PINCH RELEASED');
+        } else {
+          // 3핑거 유지 중 - 이동 확인
+          final dx = pointerPosition.dx - _gestureStartPosition!.dx;
+          final dy = pointerPosition.dy - _gestureStartPosition!.dy;
+          final distance = dart_math.sqrt(dx * dx + dy * dy);
+
+          if (distance < DEADZONE_RADIUS) {
+            // 떨림 방지 영역 내 - 대기
+            gesture = '3핑거 대기';
+          } else if (dx.abs() > dy.abs()) {
+            // X축 우세 → 스와이프
+            if (dx.abs() > SWIPE_THRESHOLD && timeSinceLastGesture > SWIPE_COOLDOWN_MS) {
+              gesture = dx > 0 ? '오른쪽 스와이프!' : '왼쪽 스와이프!';
+              debugPrint('✋ SWIPE ${dx > 0 ? "RIGHT" : "LEFT"}: dx=${dx.toStringAsFixed(3)}');
+              _lastGestureTime = now;
+              _gestureStartPosition = pointerPosition;  // 연속 스와이프 방지를 위해 위치 리셋
+            } else {
+              gesture = '좌우 이동 중...';
+            }
+          } else {
+            // Y축 우세 → 스크롤
+            _currentState = GestureState.scrolling;
+            final scrollSpeed = dy * SCROLL_SPEED_MULTIPLIER;
+            gesture = '스크롤! (${scrollSpeed.toStringAsFixed(0)})';
+            debugPrint('✋ SCROLL: dy=${dy.toStringAsFixed(3)}, speed=${scrollSpeed.toStringAsFixed(1)}');
+          }
+        }
+        break;
+
+      case GestureState.scrolling:
+        if (!isThreePinch) {
+          // 3핑거 해제 → idle로 복귀
+          _currentState = GestureState.idle;
+          _gestureStartPosition = null;
+          gesture = '스크롤 완료';
+          debugPrint('✋ SCROLL END');
+        } else {
+          // 계속 스크롤 중
+          final dy = pointerPosition.dy - _gestureStartPosition!.dy;
+          final scrollSpeed = dy * SCROLL_SPEED_MULTIPLIER;
+          gesture = '스크롤! (${scrollSpeed.toStringAsFixed(0)})';
+          // 스크롤은 매 프레임마다 업데이트
+        }
+        break;
+    }
+
+    _lastLandmarks = landmarks;
+
+    return HandDetectionResult(
+      landmarks: landmarks,
+      gesture: gesture,
+      pointerPosition: pointerPosition,
+      isCameraAtTop: isCameraAtTop,
+      thumbTipPosition: null,  // 더 이상 사용 안 함
+      indexTipPosition: null,  // 더 이상 사용 안 함
+    );
+  }
+
+  void _resetGestureState() {
+    _currentState = GestureState.idle;
+    _gestureStartPosition = null;
+    _lastSmoothedPosition = null;
+  }
+
+  double _calculateDistance(HandLandmark p1, HandLandmark p2) {
+    final dx = p1.x - p2.x;
+    final dy = p1.y - p2.y;
+    final dz = p1.z - p2.z;
+    return (dx * dx + dy * dy + dz * dz);
+  }
+
+  void dispose() {
+    _subscription?.cancel();
+    stopDetection();
+  }
+}
