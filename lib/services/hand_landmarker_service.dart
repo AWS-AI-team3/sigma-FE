@@ -35,6 +35,7 @@ enum GestureState {
   dragging,     // 드래그 중
   threePinch,   // 3핑거 핀치 (엄지+검지+중지): 스크롤/스와이프 대기
   scrolling,    // 스크롤 중
+  voiceRecording,  // 음성 녹음 중 (엄지+약지 핀치)
 }
 
 class HandLandmarkerService {
@@ -58,6 +59,7 @@ class HandLandmarkerService {
   // Pinch detection thresholds
   static const double PINCH_THRESHOLD = 0.04;  // 2핑거 핀치 감지 거리
   static const double THREE_PINCH_THRESHOLD = 0.02;  // 3핑거 핀치 감지 거리 (더 가까워야)
+  static const double VOICE_PINCH_THRESHOLD = 0.04;  // 음성 핀치 (엄지+약지) 감지 거리
   static const double DRAG_THRESHOLD = 0.05;  // 드래그 시작 거리
   static const double DEADZONE_RADIUS = 0.11;  // 떨림 방지 영역
 
@@ -130,6 +132,7 @@ class HandLandmarkerService {
     final indexMCP = landmarks[5];
     final thumbTip = landmarks[4];
     final middleTip = landmarks[12];
+    final ringTip = landmarks[16];  // 약지 끝
     final wrist = landmarks[0];
 
     // 커서: 엄지와 검지 사이 중점
@@ -157,14 +160,26 @@ class HandLandmarkerService {
     // 핀치 감지
     final thumbIndexDist = _calculateDistance(thumbTip, indexTip);
     final middleIndexDist = _calculateDistance(middleTip, indexTip);
+    final thumbRingDist = _calculateDistance(thumbTip, ringTip);  // 엄지+약지
 
+    // 각 핀치 타입 판별
     final isTwoPinch = thumbIndexDist < PINCH_THRESHOLD;  // 엄지+검지
     final isThreePinch = thumbIndexDist < THREE_PINCH_THRESHOLD &&
                         middleIndexDist < THREE_PINCH_THRESHOLD;  // 엄지+검지+중지 (더 엄격)
 
+    // 음성 핀치: 엄지+약지만 가깝고, 검지는 멀어야 함 (더 엄격한 조건)
+    final isVoicePinch = thumbRingDist < VOICE_PINCH_THRESHOLD &&
+                         thumbIndexDist > PINCH_THRESHOLD * 1.5;  // 검지는 충분히 멀리
+
     switch (_currentState) {
       case GestureState.idle:
-        if (isThreePinch) {
+        if (isVoicePinch && !isTwoPinch && !isThreePinch) {
+          // 음성 녹음 시작 (엄지+약지만, 다른 손가락 안 붙음)
+          _currentState = GestureState.voiceRecording;
+          _gestureStartPosition = pointerPosition;
+          gesture = '🎤 녹음 중';
+          debugPrint('🎤 VOICE RECORDING START');
+        } else if (isThreePinch) {
           // 3핑거 핀치 시작: 스크롤/스와이프 대기
           _currentState = GestureState.threePinch;
           _gestureStartPosition = pointerPosition;
@@ -280,6 +295,19 @@ class HandLandmarkerService {
           final scrollSpeed = dy * SCROLL_SPEED_MULTIPLIER;
           gesture = '스크롤! (${scrollSpeed.toStringAsFixed(0)})';
           // 스크롤은 매 프레임마다 업데이트
+        }
+        break;
+
+      case GestureState.voiceRecording:
+        if (!isVoicePinch) {
+          // 엄지+약지 해제 → 녹음 중지
+          _currentState = GestureState.idle;
+          _gestureStartPosition = null;
+          gesture = '🛑 녹음 중지';
+          debugPrint('🎤 VOICE RECORDING STOP');
+        } else {
+          // 계속 녹음 중
+          gesture = '🎤 녹음 중';
         }
         break;
     }

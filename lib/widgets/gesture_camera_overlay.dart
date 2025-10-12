@@ -7,11 +7,13 @@ import '../services/hand_landmarker_service.dart';
 class GestureCameraOverlay extends StatefulWidget {
   final Function(Offset) onGestureClick;
   final Function(String, {int? scrollAmount}) onGestureSwipe;
+  final Function(bool)? onVoiceRecording;  // Voice recording callback
 
   const GestureCameraOverlay({
     super.key,
     required this.onGestureClick,
     required this.onGestureSwipe,
+    this.onVoiceRecording,
   });
 
   @override
@@ -148,7 +150,13 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
           }
 
           // Handle gestures
-          if (result.gesture == '클릭!' && _pointerPosition != null) {
+          if (result.gesture == '🎤 녹음 중') {
+            // Voice recording started
+            widget.onVoiceRecording?.call(true);
+          } else if (result.gesture == '🛑 녹음 중지') {
+            // Voice recording stopped
+            widget.onVoiceRecording?.call(false);
+          } else if (result.gesture == '클릭!' && _pointerPosition != null) {
             // 정확히 '클릭!' 제스처일 때만 (한 번만 발생)
             widget.onGestureClick(_pointerPosition!);
           } else if (result.gesture.contains('드래그') && _pointerPosition != null) {

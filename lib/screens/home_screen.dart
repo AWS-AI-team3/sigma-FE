@@ -3,6 +3,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../widgets/sidebar.dart';
 import '../widgets/gesture_camera_overlay.dart';
+import '../widgets/voice_subtitle_overlay.dart';
+import '../services/voice_recognition_service.dart';
+import '../services/audio_recording_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,10 +26,47 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Flutter', 'url': 'https://flutter.dev'},
   ];
 
+  // Voice recognition
+  final VoiceRecognitionService _voiceService = VoiceRecognitionService();
+  final AudioRecordingService _audioService = AudioRecordingService();
+  String _currentSubtitle = '';
+  bool _isVoiceRecording = false;
+
   @override
   void initState() {
     super.initState();
     _initializeWebView();
+    _initializeVoiceRecognition();
+  }
+
+  @override
+  void dispose() {
+    _voiceService.dispose();
+    _audioService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeVoiceRecognition() async {
+    // Connect to WebSocket
+    final connected = await _voiceService.connect();
+    if (connected) {
+      print('✅ Voice recognition connected');
+
+      // Listen to transcript stream
+      _voiceService.transcriptStream.listen((transcript) {
+        setState(() {
+          _currentSubtitle = transcript.text;
+        });
+        print('📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})');
+      });
+
+      // Set audio data callback
+      _audioService.onAudioData = (base64Audio) {
+        _voiceService.sendAudioData(base64Audio);
+      };
+    } else {
+      print('❌ Failed to connect voice recognition');
+    }
   }
 
   void _initializeWebView() {
@@ -143,6 +183,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _handleVoiceRecording(bool isRecording) async {
+    print('🎤 Voice recording: $isRecording');
+
+    if (isRecording && !_isVoiceRecording) {
+      // Start recording
+      setState(() {
+        _isVoiceRecording = true;
+        _currentSubtitle = '';
+      });
+
+      // Start WebSocket transcription
+      await _voiceService.startTranscription();
+
+      // Start audio recording
+      await _audioService.startRecording();
+
+      print('✅ Voice recording started');
+    } else if (!isRecording && _isVoiceRecording) {
+      // Stop recording
+      setState(() {
+        _isVoiceRecording = false;
+      });
+
+      // Stop audio recording
+      await _audioService.stopRecording();
+
+      // Stop WebSocket transcription
+      await _voiceService.stopTranscription();
+
+      print('🛑 Voice recording stopped');
+
+      // Clear subtitle after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _currentSubtitle = '';
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -174,6 +256,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     GestureCameraOverlay(
                       onGestureClick: _handleGestureClick,
                       onGestureSwipe: _handleGestureSwipe,
+                      onVoiceRecording: _handleVoiceRecording,
+                    ),
+
+                  // Voice Subtitle Overlay
+                  if (_isGestureEnabled)
+                    VoiceSubtitleOverlay(
+                      subtitle: _currentSubtitle,
+                      isRecording: _isVoiceRecording,
                     ),
                 ],
               ),
