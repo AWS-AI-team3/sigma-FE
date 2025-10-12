@@ -4,8 +4,10 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../widgets/sidebar.dart';
 import '../widgets/gesture_camera_overlay.dart';
 import '../widgets/voice_subtitle_overlay.dart';
+import '../widgets/websocket_status_indicator.dart';
 import '../services/voice_recognition_service.dart';
 import '../services/audio_recording_service.dart';
+import '../services/bookmark_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,12 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _currentUrl = 'https://www.google.com';
   bool _isGestureEnabled = false;
 
-  final List<Map<String, String>> _bookmarks = [
-    {'name': 'Google', 'url': 'https://www.google.com'},
-    {'name': 'YouTube', 'url': 'https://www.youtube.com'},
-    {'name': 'GitHub', 'url': 'https://github.com'},
-    {'name': 'Flutter', 'url': 'https://flutter.dev'},
-  ];
+  List<Bookmark> _bookmarks = [];
 
   // Voice recognition
   final VoiceRecognitionService _voiceService = VoiceRecognitionService();
@@ -35,8 +32,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _loadBookmarks();
     _initializeWebView();
     _initializeVoiceRecognition();
+  }
+
+  Future<void> _loadBookmarks() async {
+    final bookmarks = await BookmarkService.getBookmarks();
+    setState(() {
+      _bookmarks = bookmarks;
+    });
   }
 
   @override
@@ -58,6 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _currentSubtitle = transcript.text;
         });
         print('📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})');
+
+        // 최종 transcript일 때만 명령 처리
+        if (!transcript.isPartial && transcript.text.isNotEmpty) {
+          _handleVoiceCommand(transcript.text);
+        }
       });
 
       // Set audio data callback
@@ -163,6 +173,44 @@ class _HomeScreenState extends State<HomeScreen> {
     ''');
   }
 
+  void _handleGestureDrag(String action, Offset position) {
+    // action: 'start', 'move', 'end'
+    _webViewController.runJavaScript('''
+      var element = document.elementFromPoint(${position.dx}, ${position.dy});
+      if (element) {
+        var event;
+        if ('$action' === 'start') {
+          event = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: ${position.dx},
+            clientY: ${position.dy}
+          });
+        } else if ('$action' === 'move') {
+          event = new MouseEvent('mousemove', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: ${position.dx},
+            clientY: ${position.dy}
+          });
+        } else if ('$action' === 'end') {
+          event = new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: ${position.dx},
+            clientY: ${position.dy}
+          });
+        }
+        if (event) {
+          element.dispatchEvent(event);
+        }
+      }
+    ''');
+  }
+
   void _handleGestureSwipe(String direction, {int? scrollAmount}) {
     switch (direction) {
       case 'left':
@@ -180,6 +228,41 @@ class _HomeScreenState extends State<HomeScreen> {
         final amount = scrollAmount ?? 50;
         _webViewController.scrollBy(0, amount);
         break;
+    }
+  }
+
+  Future<void> _handleVoiceCommand(String command) async {
+    print('🎙️ Voice command: $command');
+
+    // 즐겨찾기 찾기
+    final bookmark = await BookmarkService.findBookmarkByVoice(command);
+    if (bookmark != null) {
+      print('✅ Found bookmark: ${bookmark.name} -> ${bookmark.url}');
+      _navigateToUrl(bookmark.url);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${bookmark.name} 페이지로 이동'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // 특수 명령어 처리
+    if (command.contains('뒤로') || command.contains('back')) {
+      _webViewController.goBack();
+      print('⬅️ Navigate back');
+    } else if (command.contains('앞으로') || command.contains('forward')) {
+      _webViewController.goForward();
+      print('➡️ Navigate forward');
+    } else if (command.contains('새로고침') || command.contains('refresh') || command.contains('reload')) {
+      _webViewController.reload();
+      print('🔄 Reload page');
+    } else {
+      print('❓ Unknown command: $command');
     }
   }
 
@@ -201,6 +284,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       print('✅ Voice recording started');
     } else if (!isRecording && _isVoiceRecording) {
+      // 녹음 중지 전에 현재 자막으로 명령 실행
+      final finalCommand = _currentSubtitle.trim();
+
       // Stop recording
       setState(() {
         _isVoiceRecording = false;
@@ -213,6 +299,12 @@ class _HomeScreenState extends State<HomeScreen> {
       await _voiceService.stopTranscription();
 
       print('🛑 Voice recording stopped');
+
+      // 최종 명령 처리
+      if (finalCommand.isNotEmpty) {
+        print('🎯 Processing final command: $finalCommand');
+        await _handleVoiceCommand(finalCommand);
+      }
 
       // Clear subtitle after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
@@ -242,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _isGestureEnabled = value;
                 });
               },
+              onBookmarksChanged: _loadBookmarks,
             ),
 
             // WebView with Gesture Overlay
@@ -255,6 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_isGestureEnabled)
                     GestureCameraOverlay(
                       onGestureClick: _handleGestureClick,
+                      onGestureDrag: _handleGestureDrag,
                       onGestureSwipe: _handleGestureSwipe,
                       onVoiceRecording: _handleVoiceRecording,
                     ),
@@ -264,6 +358,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     VoiceSubtitleOverlay(
                       subtitle: _currentSubtitle,
                       isRecording: _isVoiceRecording,
+                    ),
+
+                  // WebSocket Status Indicator
+                  if (_isGestureEnabled)
+                    WebSocketStatusIndicator(
+                      isConnected: _voiceService.isConnected,
+                      isRecording: _isVoiceRecording,
+                      onReconnect: () async {
+                        print('🔄 Manual reconnect requested');
+                        final success = await _voiceService.reconnect();
+                        if (success && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('WebSocket 재연결 성공')),
+                          );
+                        }
+                      },
                     ),
                 ],
               ),

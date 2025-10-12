@@ -6,12 +6,14 @@ import '../services/hand_landmarker_service.dart';
 
 class GestureCameraOverlay extends StatefulWidget {
   final Function(Offset) onGestureClick;
+  final Function(String, Offset) onGestureDrag;  // Drag callback with action
   final Function(String, {int? scrollAmount}) onGestureSwipe;
   final Function(bool)? onVoiceRecording;  // Voice recording callback
 
   const GestureCameraOverlay({
     super.key,
     required this.onGestureClick,
+    required this.onGestureDrag,
     required this.onGestureSwipe,
     this.onVoiceRecording,
   });
@@ -30,6 +32,7 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
   Offset? _thumbTipPosition;
   Offset? _indexTipPosition;
   bool _isCameraAtTop = false;  // Track if camera is at top of device
+  bool _showCameraPreview = true;  // Camera preview toggle
 
   @override
   void initState() {
@@ -159,9 +162,17 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
           } else if (result.gesture == '클릭!' && _pointerPosition != null) {
             // 정확히 '클릭!' 제스처일 때만 (한 번만 발생)
             widget.onGestureClick(_pointerPosition!);
+          } else if (result.gesture == '드래그!' && _pointerPosition != null) {
+            // 드래그 시작 - mousedown
+            widget.onGestureDrag('start', _pointerPosition!);
           } else if (result.gesture.contains('드래그') && _pointerPosition != null) {
-            // 드래그 중에는 계속 클릭 위치를 업데이트
-            widget.onGestureClick(_pointerPosition!);
+            // 드래그 중 - mousemove
+            widget.onGestureDrag('move', _pointerPosition!);
+          } else if (result.gesture == '드래그 완료') {
+            // 드래그 종료 - mouseup
+            if (_pointerPosition != null) {
+              widget.onGestureDrag('end', _pointerPosition!);
+            }
           } else if (result.gesture.contains('스와이프')) {
             if (result.gesture.contains('왼쪽')) {
               widget.onGestureSwipe('left');
@@ -213,31 +224,87 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
     return Stack(
       children: [
         // Camera preview (small, top-right corner)
+        if (_showCameraPreview)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              width: 160,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: _isInitialized
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Container(
+                            color: Colors.black87,
+                            child: const Icon(
+                              Icons.videocam,
+                              size: 48,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          Center(
+                            child: Text(
+                              '제스처 추적 중',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+              ),
+            ),
+          ),
+
+        // Camera toggle button
         Positioned(
           top: 16,
-          right: 16,
-          child: Container(
-            width: 160,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: _isInitialized && _cameraController != null
-                  ? CameraPreview(_cameraController!)
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+          right: _showCameraPreview ? 184 : 16,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _showCameraPreview = !_showCameraPreview;
+              });
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _showCameraPreview ? Colors.blue : Colors.grey,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                _showCameraPreview ? Icons.videocam : Icons.videocam_off,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
           ),
         ),

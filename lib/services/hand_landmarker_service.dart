@@ -57,15 +57,15 @@ class HandLandmarkerService {
   static const double SMOOTHING_FACTOR = 0.3;  // 0~1, 낮을수록 부드러움
 
   // Pinch detection thresholds
-  static const double PINCH_THRESHOLD = 0.04;  // 2핑거 핀치 감지 거리
-  static const double THREE_PINCH_THRESHOLD = 0.02;  // 3핑거 핀치 감지 거리 (더 가까워야)
+  static const double PINCH_THRESHOLD = 0.02;  // 2핑거 핀치 감지 거리
+  static const double SCROLL_PINCH_THRESHOLD = 0.04;  // 3핑거 스크롤 감지 거리 (더 여유있게)
   static const double VOICE_PINCH_THRESHOLD = 0.04;  // 음성 핀치 (엄지+약지) 감지 거리
   static const double DRAG_THRESHOLD = 0.05;  // 드래그 시작 거리
   static const double DEADZONE_RADIUS = 0.11;  // 떨림 방지 영역
 
   // Scroll/Swipe thresholds
-  static const double SWIPE_THRESHOLD = 0.3;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
-  static const double SCROLL_SPEED_MULTIPLIER = 50.0;  // Y축 이동 거리 → 스크롤 픽셀 (0.1 이동 = 30px)
+  static const double SWIPE_THRESHOLD = 0.15;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
+  static const double SCROLL_SPEED_MULTIPLIER = 100.0;  // Y축 이동 거리 → 스크롤 픽셀 (0.1 이동 = 30px)
   static const int SWIPE_COOLDOWN_MS = 800;  // 쿨다운 증가 (500 -> 800)
 
   Future<void> initialize() async {
@@ -159,15 +159,18 @@ class HandLandmarkerService {
 
     // 핀치 감지
     final thumbIndexDist = _calculateDistance(thumbTip, indexTip);
-    final middleIndexDist = _calculateDistance(middleTip, indexTip);
+    final thumbMiddleDist = _calculateDistance(thumbTip, middleTip);  // 엄지+중지
     final thumbRingDist = _calculateDistance(thumbTip, ringTip);  // 엄지+약지
 
-    // 각 핀치 타입 판별
-    final isTwoPinch = thumbIndexDist < PINCH_THRESHOLD;  // 엄지+검지
-    final isThreePinch = thumbIndexDist < THREE_PINCH_THRESHOLD &&
-                        middleIndexDist < THREE_PINCH_THRESHOLD;  // 엄지+검지+중지 (더 엄격)
+    // 각 핀치 타입 판별 (new_layout 방식)
+    // 3핑거 스크롤: 엄지가 검지, 중지 둘 다와 가까움 (가장 먼저 체크)
+    final isThreePinch = thumbIndexDist < SCROLL_PINCH_THRESHOLD &&
+                         thumbMiddleDist < SCROLL_PINCH_THRESHOLD;
 
-    // 음성 핀치: 엄지+약지만 가깝고, 검지는 멀어야 함 (더 엄격한 조건)
+    // 2핑거 클릭: 엄지+검지만 가까움 (3핑거가 아닐 때)
+    final isTwoPinch = !isThreePinch && thumbIndexDist < PINCH_THRESHOLD;
+
+    // 음성 핀치: 엄지+약지만 가깝고, 검지는 멀어야 함
     final isVoicePinch = thumbRingDist < VOICE_PINCH_THRESHOLD &&
                          thumbIndexDist > PINCH_THRESHOLD * 1.5;  // 검지는 충분히 멀리
 
@@ -275,9 +278,11 @@ class HandLandmarkerService {
           } else {
             // Y축 우세 → 스크롤
             _currentState = GestureState.scrolling;
-            final scrollSpeed = dy * SCROLL_SPEED_MULTIPLIER;
-            gesture = '스크롤! (${scrollSpeed.toStringAsFixed(0)})';
-            debugPrint('✋ SCROLL: dy=${dy.toStringAsFixed(3)}, speed=${scrollSpeed.toStringAsFixed(1)}');
+            // 거리의 제곱에 비례하여 가속 (더 멀리 이동할수록 더 빠름)
+            final absDistance = dy.abs();
+            final acceleratedSpeed = dy * absDistance * SCROLL_SPEED_MULTIPLIER;
+            gesture = '스크롤! (${acceleratedSpeed.toStringAsFixed(0)})';
+            debugPrint('✋ SCROLL: dy=${dy.toStringAsFixed(3)}, distance=${absDistance.toStringAsFixed(3)}, speed=${acceleratedSpeed.toStringAsFixed(1)}');
           }
         }
         break;
@@ -292,8 +297,10 @@ class HandLandmarkerService {
         } else {
           // 계속 스크롤 중
           final dy = pointerPosition.dy - _gestureStartPosition!.dy;
-          final scrollSpeed = dy * SCROLL_SPEED_MULTIPLIER;
-          gesture = '스크롤! (${scrollSpeed.toStringAsFixed(0)})';
+          // 거리의 제곱에 비례하여 가속
+          final absDistance = dy.abs();
+          final acceleratedSpeed = dy * absDistance * SCROLL_SPEED_MULTIPLIER;
+          gesture = '스크롤! (${acceleratedSpeed.toStringAsFixed(0)})';
           // 스크롤은 매 프레임마다 업데이트
         }
         break;
