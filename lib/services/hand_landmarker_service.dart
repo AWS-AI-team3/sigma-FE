@@ -31,16 +31,20 @@ class HandDetectionResult {
 
 enum GestureState {
   idle,
-  twoPinch,     // 2핑거 핀치 (엄지+검지): 클릭 대기
-  dragging,     // 드래그 중
-  threePinch,   // 3핑거 핀치 (엄지+검지+중지): 스크롤/스와이프 대기
-  scrolling,    // 스크롤 중
-  voiceRecording,  // 음성 녹음 중 (엄지+약지 핀치)
+  twoPinch, // 2핑거 핀치 (엄지+검지): 클릭 대기
+  dragging, // 드래그 중
+  threePinch, // 3핑거 핀치 (엄지+검지+중지): 스크롤/스와이프 대기
+  scrolling, // 스크롤 중
+  voiceRecording, // 음성 녹음 중 (엄지+약지 핀치)
 }
 
 class HandLandmarkerService {
-  static const MethodChannel _channel = MethodChannel('gesture_browser/hand_landmarker');
-  static const EventChannel _eventChannel = EventChannel('gesture_browser/hand_landmarks');
+  static const MethodChannel _channel = MethodChannel(
+    'gesture_browser/hand_landmarker',
+  );
+  static const EventChannel _eventChannel = EventChannel(
+    'gesture_browser/hand_landmarks',
+  );
 
   List<HandLandmark>? _lastLandmarks;
   DateTime? _lastGestureTime;
@@ -54,19 +58,21 @@ class HandLandmarkerService {
 
   // Cursor smoothing (손떨림 보정)
   Offset? _lastSmoothedPosition;
-  static const double SMOOTHING_FACTOR = 0.3;  // 0~1, 낮을수록 부드러움
+  static const double SMOOTHING_FACTOR = 0.3; // 0~1, 낮을수록 부드러움
 
   // Pinch detection thresholds
-  static const double PINCH_THRESHOLD = 0.02;  // 2핑거 핀치 감지 거리
-  static const double SCROLL_PINCH_THRESHOLD = 0.04;  // 3핑거 스크롤 감지 거리 (더 여유있게)
-  static const double VOICE_PINCH_THRESHOLD = 0.04;  // 음성 핀치 (엄지+약지) 감지 거리
-  static const double DRAG_THRESHOLD = 0.05;  // 드래그 시작 거리
-  static const double DEADZONE_RADIUS = 0.11;  // 떨림 방지 영역
+  static const double PINCH_THRESHOLD = 0.02; // 2핑거 핀치 감지 거리
+  static const double SCROLL_PINCH_THRESHOLD = 0.04; // 3핑거 스크롤 감지 거리 (더 여유있게)
+  static const double VOICE_PINCH_THRESHOLD = 0.04; // 음성 핀치 (엄지+약지) 감지 거리
+  static const double DRAG_THRESHOLD = 0.05; // 드래그 시작 거리
+  static const double DEADZONE_RADIUS = 0.11; // 떨림 방지 영역
 
   // Scroll/Swipe thresholds
-  static const double SWIPE_THRESHOLD = 0.15;  // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
-  static const double SCROLL_SPEED_MULTIPLIER = 100.0;  // Y축 이동 거리 → 스크롤 픽셀 (0.1 이동 = 30px)
-  static const int SWIPE_COOLDOWN_MS = 800;  // 쿨다운 증가 (500 -> 800)
+  static const double SWIPE_THRESHOLD =
+      0.15; // X축 스와이프 감지 거리 (0.08 -> 0.15, 더 크게 움직여야)
+  static const double SCROLL_SPEED_MULTIPLIER =
+      100.0; // Y축 이동 거리 → 스크롤 픽셀 (0.1 이동 = 30px)
+  static const int SWIPE_COOLDOWN_MS = 800; // 쿨다운 증가 (500 -> 800)
 
   Future<void> initialize() async {
     try {
@@ -122,17 +128,23 @@ class HandLandmarkerService {
     }
   }
 
-  HandDetectionResult _analyzeGesture(List<HandLandmark> landmarks, bool isCameraAtTop) {
+  HandDetectionResult _analyzeGesture(
+    List<HandLandmark> landmarks,
+    bool isCameraAtTop,
+  ) {
     if (landmarks.isEmpty || landmarks.length < 21) {
       _resetGestureState();
-      return HandDetectionResult(landmarks: landmarks, isCameraAtTop: isCameraAtTop);
+      return HandDetectionResult(
+        landmarks: landmarks,
+        isCameraAtTop: isCameraAtTop,
+      );
     }
 
     final indexTip = landmarks[8];
     final indexMCP = landmarks[5];
     final thumbTip = landmarks[4];
     final middleTip = landmarks[12];
-    final ringTip = landmarks[16];  // 약지 끝
+    final ringTip = landmarks[16]; // 약지 끝
     final wrist = landmarks[0];
 
     // 커서: 엄지와 검지 사이 중점
@@ -145,8 +157,12 @@ class HandLandmarkerService {
     final pointerPosition = _lastSmoothedPosition == null
         ? rawPointerPosition
         : Offset(
-            _lastSmoothedPosition!.dx + (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
-            _lastSmoothedPosition!.dy + (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+            _lastSmoothedPosition!.dx +
+                (rawPointerPosition.dx - _lastSmoothedPosition!.dx) *
+                    SMOOTHING_FACTOR,
+            _lastSmoothedPosition!.dy +
+                (rawPointerPosition.dy - _lastSmoothedPosition!.dy) *
+                    SMOOTHING_FACTOR,
           );
     _lastSmoothedPosition = pointerPosition;
 
@@ -159,20 +175,22 @@ class HandLandmarkerService {
 
     // 핀치 감지
     final thumbIndexDist = _calculateDistance(thumbTip, indexTip);
-    final thumbMiddleDist = _calculateDistance(thumbTip, middleTip);  // 엄지+중지
-    final thumbRingDist = _calculateDistance(thumbTip, ringTip);  // 엄지+약지
+    final thumbMiddleDist = _calculateDistance(thumbTip, middleTip); // 엄지+중지
+    final thumbRingDist = _calculateDistance(thumbTip, ringTip); // 엄지+약지
 
     // 각 핀치 타입 판별 (new_layout 방식)
     // 3핑거 스크롤: 엄지가 검지, 중지 둘 다와 가까움 (가장 먼저 체크)
-    final isThreePinch = thumbIndexDist < SCROLL_PINCH_THRESHOLD &&
-                         thumbMiddleDist < SCROLL_PINCH_THRESHOLD;
+    final isThreePinch =
+        thumbIndexDist < SCROLL_PINCH_THRESHOLD &&
+        thumbMiddleDist < SCROLL_PINCH_THRESHOLD;
 
     // 2핑거 클릭: 엄지+검지만 가까움 (3핑거가 아닐 때)
     final isTwoPinch = !isThreePinch && thumbIndexDist < PINCH_THRESHOLD;
 
     // 음성 핀치: 엄지+약지만 가깝고, 검지는 멀어야 함
-    final isVoicePinch = thumbRingDist < VOICE_PINCH_THRESHOLD &&
-                         thumbIndexDist > PINCH_THRESHOLD * 1.5;  // 검지는 충분히 멀리
+    final isVoicePinch =
+        thumbRingDist < VOICE_PINCH_THRESHOLD &&
+        thumbIndexDist > PINCH_THRESHOLD * 1.5; // 검지는 충분히 멀리
 
     switch (_currentState) {
       case GestureState.idle:
@@ -187,13 +205,17 @@ class HandLandmarkerService {
           _currentState = GestureState.threePinch;
           _gestureStartPosition = pointerPosition;
           gesture = '3핑거 대기';
-          debugPrint('✋ 3-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+          debugPrint(
+            '✋ 3-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})',
+          );
         } else if (isTwoPinch) {
           // 2핑거 핀치 시작: 클릭 대기
           _currentState = GestureState.twoPinch;
           _gestureStartPosition = pointerPosition;
           gesture = '2핑거 대기';
-          debugPrint('✋ 2-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+          debugPrint(
+            '✋ 2-PINCH START at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})',
+          );
         } else {
           gesture = '손 감지됨';
         }
@@ -211,7 +233,9 @@ class HandLandmarkerService {
           _currentState = GestureState.idle;
           _gestureStartPosition = null;
           gesture = '클릭!';
-          debugPrint('✋ CLICK at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})');
+          debugPrint(
+            '✋ CLICK at (${pointerPosition.dx.toStringAsFixed(2)}, ${pointerPosition.dy.toStringAsFixed(2)})',
+          );
           _lastGestureTime = now;
         } else {
           // 2핑거 유지 중 - 이동 거리 확인
@@ -267,11 +291,14 @@ class HandLandmarkerService {
             gesture = '3핑거 대기';
           } else if (dx.abs() > dy.abs()) {
             // X축 우세 → 스와이프
-            if (dx.abs() > SWIPE_THRESHOLD && timeSinceLastGesture > SWIPE_COOLDOWN_MS) {
+            if (dx.abs() > SWIPE_THRESHOLD &&
+                timeSinceLastGesture > SWIPE_COOLDOWN_MS) {
               gesture = dx > 0 ? '왼쪽 스와이프!' : '오른쪽 스와이프!';
-              debugPrint('✋ SWIPE ${dx > 0 ? "LEFT" : "RIGHT"}: dx=${dx.toStringAsFixed(3)}');
+              debugPrint(
+                '✋ SWIPE ${dx > 0 ? "LEFT" : "RIGHT"}: dx=${dx.toStringAsFixed(3)}',
+              );
               _lastGestureTime = now;
-              _gestureStartPosition = pointerPosition;  // 연속 스와이프 방지를 위해 위치 리셋
+              _gestureStartPosition = pointerPosition; // 연속 스와이프 방지를 위해 위치 리셋
             } else {
               gesture = '좌우 이동 중...';
             }
@@ -282,7 +309,9 @@ class HandLandmarkerService {
             final absDistance = dy.abs();
             final acceleratedSpeed = dy * absDistance * SCROLL_SPEED_MULTIPLIER;
             gesture = '스크롤! (${acceleratedSpeed.toStringAsFixed(0)})';
-            debugPrint('✋ SCROLL: dy=${dy.toStringAsFixed(3)}, distance=${absDistance.toStringAsFixed(3)}, speed=${acceleratedSpeed.toStringAsFixed(1)}');
+            debugPrint(
+              '✋ SCROLL: dy=${dy.toStringAsFixed(3)}, distance=${absDistance.toStringAsFixed(3)}, speed=${acceleratedSpeed.toStringAsFixed(1)}',
+            );
           }
         }
         break;
@@ -326,8 +355,8 @@ class HandLandmarkerService {
       gesture: gesture,
       pointerPosition: pointerPosition,
       isCameraAtTop: isCameraAtTop,
-      thumbTipPosition: null,  // 더 이상 사용 안 함
-      indexTipPosition: null,  // 더 이상 사용 안 함
+      thumbTipPosition: null, // 더 이상 사용 안 함
+      indexTipPosition: null, // 더 이상 사용 안 함
     );
   }
 

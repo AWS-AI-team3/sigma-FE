@@ -62,7 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _currentSubtitle = transcript.text;
         });
-        print('📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})');
+        print(
+          '📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})',
+        );
 
         // 최종 transcript일 때만 명령 처리
         if (!transcript.isPartial && transcript.text.isNotEmpty) {
@@ -258,7 +260,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (command.contains('앞으로') || command.contains('forward')) {
       _webViewController.goForward();
       print('➡️ Navigate forward');
-    } else if (command.contains('새로고침') || command.contains('refresh') || command.contains('reload')) {
+    } else if (command.contains('새로고침') ||
+        command.contains('refresh') ||
+        command.contains('reload')) {
       _webViewController.reload();
       print('🔄 Reload page');
     } else {

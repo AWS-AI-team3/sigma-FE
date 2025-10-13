@@ -53,19 +53,11 @@ class WebSocketStatusIndicator extends StatelessWidget {
               ),
               if (isRecording) ...[
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.mic,
-                  color: Colors.red,
-                  size: 16,
-                ),
+                const Icon(Icons.mic, color: Colors.red, size: 16),
               ],
               if (!isConnected) ...[
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.refresh,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                const Icon(Icons.refresh, color: Colors.white, size: 16),
               ],
             ],
           ),

@@ -9,7 +9,8 @@ class GoogleAuthService {
   GoogleAuthService._internal();
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '733126943224-8cj8bbhuiftpcfque2t3mq83dcqj16nq.apps.googleusercontent.com',
+    clientId:
+        '733126943224-8cj8bbhuiftpcfque2t3mq83dcqj16nq.apps.googleusercontent.com',
     scopes: ['email', 'profile', 'openid'],
   );
 
@@ -31,10 +32,7 @@ class GoogleAuthService {
 
       if (account == null) {
         print('⚠️ Google Sign In returned null (user cancelled?)');
-        return {
-          'success': false,
-          'error': 'User cancelled sign in',
-        };
+        return {'success': false, 'error': 'User cancelled sign in'};
       }
 
       _currentUser = account;
@@ -45,10 +43,7 @@ class GoogleAuthService {
 
       if (idToken == null) {
         print('❌ ID Token is null');
-        return {
-          'success': false,
-          'error': 'Failed to get ID token',
-        };
+        return {'success': false, 'error': 'Failed to get ID token'};
       }
 
       print('📡 Sending ID Token to backend...');
@@ -60,10 +55,13 @@ class GoogleAuthService {
         includeAuth: false,
       );
 
-      if (response != null && (response['sucess'] == true || response['success'] == true)) {
+      if (response != null &&
+          (response['sucess'] == true || response['success'] == true)) {
         // 토큰 저장
         final data = response['data'];
-        if (data != null && data['accessToken'] != null && data['refreshToken'] != null) {
+        if (data != null &&
+            data['accessToken'] != null &&
+            data['refreshToken'] != null) {
           final accessToken = data['accessToken'] as String;
           final refreshToken = data['refreshToken'] as String;
           final expiresIn = data['expiresIn'] as int? ?? 3600; // default 1 hour
@@ -84,10 +82,7 @@ class GoogleAuthService {
 
         print('✅ Google Sign In Success: ${account.email}');
 
-        return {
-          'success': true,
-          'data': response['data'],
-        };
+        return {'success': true, 'data': response['data']};
       } else {
         return {
           'success': false,
@@ -96,10 +91,7 @@ class GoogleAuthService {
       }
     } catch (error) {
       print('❌ Google Sign In Error: $error');
-      return {
-        'success': false,
-        'error': error.toString(),
-      };
+      return {'success': false, 'error': error.toString()};
     }
   }
 

@@ -29,11 +29,7 @@ class FaceDialog {
                 right: 16,
                 child: GestureDetector(
                   onTap: () => Navigator.of(dialogContext).pop(),
-                  child: const Icon(
-                    Icons.close,
-                    size: 20,
-                    color: Colors.grey,
-                  ),
+                  child: const Icon(Icons.close, size: 20, color: Colors.grey),
                 ),
               ),
               // Content
@@ -41,11 +37,7 @@ class FaceDialog {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.check,
-                      size: 60,
-                      color: Colors.blue,
-                    ),
+                    const Icon(Icons.check, size: 60, color: Colors.blue),
                     const SizedBox(height: 20),
                     Text(
                       message,
@@ -118,11 +110,7 @@ class FaceDialog {
                 right: 16,
                 child: GestureDetector(
                   onTap: () => Navigator.of(dialogContext).pop(),
-                  child: const Icon(
-                    Icons.close,
-                    size: 20,
-                    color: Colors.grey,
-                  ),
+                  child: const Icon(Icons.close, size: 20, color: Colors.grey),
                 ),
               ),
               // Content
@@ -130,11 +118,7 @@ class FaceDialog {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.close,
-                      size: 60,
-                      color: Colors.blue,
-                    ),
+                    const Icon(Icons.close, size: 60, color: Colors.blue),
                     const SizedBox(height: 20),
                     Text(
                       message,

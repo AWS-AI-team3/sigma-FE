@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
-import 'home_screen.dart';
 import 'face_enrollment_screen.dart';
 import 'face_registration_screen.dart';
 
@@ -31,11 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result != null && result['success'] == true && mounted) {
         // 구글 로그인 성공 → 얼굴 등록 여부 확인
         print('✅ Google login success, checking face registration...');
-        final faceCheckResult = await FaceAuthService.checkRegistrationAndGetPresignedUrl();
+        final faceCheckResult =
+            await FaceAuthService.checkRegistrationAndGetPresignedUrl();
 
         if (mounted) {
           if (faceCheckResult != null) {
-            if (faceCheckResult['sucess'] == true || faceCheckResult['success'] == true) {
+            if (faceCheckResult['sucess'] == true ||
+                faceCheckResult['success'] == true) {
               // 얼굴 등록 완료 - 얼굴 인증 화면으로 이동
               print('👤 Face registered, going to authentication');
               Navigator.pushReplacement(
@@ -46,19 +47,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               );
             } else if (faceCheckResult['error'] != null &&
-                       faceCheckResult['error']['code'] == 'FACE_NOT_REGISTERED') {
+                faceCheckResult['error']['code'] == 'FACE_NOT_REGISTERED') {
               // 얼굴 등록 안됨 - 얼굴 등록 화면으로 이동
               print('📸 Face not registered, going to enrollment');
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const FaceEnrollmentScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const FaceEnrollmentScreen(),
+                ),
               );
             } else {
               // 기타 오류 - 얼굴 등록 화면으로 이동
               print('⚠️ Unknown response, going to enrollment');
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const FaceEnrollmentScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const FaceEnrollmentScreen(),
+                ),
               );
             }
           } else {
@@ -66,14 +71,18 @@ class _LoginScreenState extends State<LoginScreen> {
             print('❌ API call failed, going to enrollment');
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const FaceEnrollmentScreen()),
+              MaterialPageRoute(
+                builder: (context) => const FaceEnrollmentScreen(),
+              ),
             );
           }
         }
       } else {
         // error는 Map<String, dynamic> 형태
         final error = result?['error'];
-        final errorMessage = error is Map ? (error['message'] ?? '로그인에 실패했습니다.') : '로그인에 실패했습니다.';
+        final errorMessage = error is Map
+            ? (error['message'] ?? '로그인에 실패했습니다.')
+            : '로그인에 실패했습니다.';
         _showErrorDialog(errorMessage);
       }
     } catch (e) {
@@ -112,10 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade400,
-              Colors.purple.shade400,
-            ],
+            colors: [Colors.blue.shade400, Colors.purple.shade400],
           ),
         ),
         child: SafeArea(
@@ -126,11 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 로고 또는 앱 이름
-                  const Icon(
-                    Icons.gesture,
-                    size: 120,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.gesture, size: 120, color: Colors.white),
                   const SizedBox(height: 24),
                   const Text(
                     'Gesture Browser',
@@ -143,10 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'MediaPipe Hand Tracking',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.white70),
                   ),
                   const SizedBox(height: 80),
 
@@ -180,7 +179,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.login, color: Colors.blue.shade700, size: 24),
+                            Icon(
+                              Icons.login,
+                              color: Colors.blue.shade700,
+                              size: 24,
+                            ),
                             const SizedBox(width: 12),
                             const Text(
                               'Google로 로그인',
@@ -200,10 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // 안내 문구
                   const Text(
                     '로그인 후 얼굴 인증을 진행합니다',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                 ],
               ),

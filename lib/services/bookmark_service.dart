@@ -21,10 +21,7 @@ class Bookmark {
   Map<String, dynamic> toJson() => {'name': name, 'url': url};
 
   factory Bookmark.fromJson(Map<String, dynamic> json) {
-    return Bookmark(
-      name: json['name'] as String,
-      url: json['url'] as String,
-    );
+    return Bookmark(name: json['name'] as String, url: json['url'] as String);
   }
 }
 
@@ -153,12 +150,16 @@ class BookmarkService {
     print('🔍 Step 2: Checking keyword matching...');
     for (final entry in keywordMap.entries) {
       if (input.contains(entry.key)) {
-        print('  ✓ Input contains "${entry.key}", checking keywords: ${entry.value}');
+        print(
+          '  ✓ Input contains "${entry.key}", checking keywords: ${entry.value}',
+        );
         for (final keyword in entry.value) {
           for (final bookmark in bookmarks) {
             if (bookmark.name.toLowerCase().contains(keyword) ||
                 bookmark.url.toLowerCase().contains(keyword)) {
-              print('✅ STEP 2 MATCH - Keyword: ${entry.key} → $keyword → ${bookmark.name}');
+              print(
+                '✅ STEP 2 MATCH - Keyword: ${entry.key} → $keyword → ${bookmark.name}',
+              );
               return bookmark;
             }
           }
@@ -182,7 +183,7 @@ class BookmarkService {
     print('🔍 Step 4: Checking name matching...');
     for (final bookmark in bookmarks) {
       final bookmarkName = bookmark.name.toLowerCase();
-      print('  Checking if "${bookmarkName}" contains "$input"');
+      print('  Checking if "$bookmarkName" contains "$input"');
       // 입력이 즐겨찾기 이름을 포함하는 경우만 (역방향은 제거)
       if (bookmarkName.contains(input) && input.length >= 2) {
         print('✅ STEP 4 MATCH - Name contains: $input in ${bookmark.name}');

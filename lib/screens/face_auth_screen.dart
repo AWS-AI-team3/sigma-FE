@@ -116,9 +116,7 @@ class _FaceAuthScreenState extends State<FaceAuthScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } catch (e) {
@@ -154,10 +152,7 @@ class _FaceAuthScreenState extends State<FaceAuthScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.purple.shade400,
-              Colors.blue.shade400,
-            ],
+            colors: [Colors.purple.shade400, Colors.blue.shade400],
           ),
         ),
         child: SafeArea(
@@ -201,18 +196,16 @@ class _FaceAuthScreenState extends State<FaceAuthScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(17),
                   child: _isPhotoCaptured && _capturedImageBytes != null
-                      ? Image.memory(
-                          _capturedImageBytes!,
-                          fit: BoxFit.cover,
-                        )
+                      ? Image.memory(_capturedImageBytes!, fit: BoxFit.cover)
                       : _isInitialized && _cameraController != null
-                          ? CameraPreview(_cameraController!)
-                          : const Center(
-                              child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
+                      ? CameraPreview(_cameraController!)
+                      : const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
                             ),
+                          ),
+                        ),
                 ),
               ),
 

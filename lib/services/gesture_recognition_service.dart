@@ -71,7 +71,8 @@ class GestureRecognitionService {
     if (rightIndex != null) {
       final distance = _calculateDistance(rightWrist, rightIndex);
 
-      if (distance < 30) { // Threshold for "pinch"
+      if (distance < 30) {
+        // Threshold for "pinch"
         final now = DateTime.now();
         if (_lastClickTime == null ||
             now.difference(_lastClickTime!).inMilliseconds > 500) {
@@ -88,7 +89,8 @@ class GestureRecognitionService {
       final dy = rightWrist.y - _lastRightHandPosition!.y;
       final distance = dx.abs() + dy.abs();
 
-      if (distance > 100) { // Threshold for swipe
+      if (distance > 100) {
+        // Threshold for swipe
         if (dx.abs() > dy.abs()) {
           // Horizontal swipe
           result['gesture'] = dx > 0 ? '오른쪽 스와이프' : '왼쪽 스와이프';
@@ -132,10 +134,7 @@ class GestureRecognitionService {
         bytesPerRow: image.planes[0].bytesPerRow,
       );
 
-      return InputImage.fromBytes(
-        bytes: bytes,
-        metadata: inputImageData,
-      );
+      return InputImage.fromBytes(bytes: bytes, metadata: inputImageData);
     } catch (e) {
       return null;
     }

@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class FaceBackButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const FaceBackButton({
-    super.key,
-    required this.onTap,
-  });
+  const FaceBackButton({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +16,7 @@ class FaceBackButton extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: const [
-            Icon(
-              Icons.arrow_back_ios,
-              color: Colors.blue,
-              size: 21,
-            ),
+            Icon(Icons.arrow_back_ios, color: Colors.blue, size: 21),
             SizedBox(width: 8),
             Text(
               'back',

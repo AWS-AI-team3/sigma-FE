@@ -1,14 +1,13 @@
 import 'dart:math' as dart_math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import '../services/hand_landmarker_service.dart';
 
 class GestureCameraOverlay extends StatefulWidget {
   final Function(Offset) onGestureClick;
-  final Function(String, Offset) onGestureDrag;  // Drag callback with action
+  final Function(String, Offset) onGestureDrag; // Drag callback with action
   final Function(String, {int? scrollAmount}) onGestureSwipe;
-  final Function(bool)? onVoiceRecording;  // Voice recording callback
+  final Function(bool)? onVoiceRecording; // Voice recording callback
 
   const GestureCameraOverlay({
     super.key,
@@ -31,8 +30,8 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
   Offset? _pointerPosition;
   Offset? _thumbTipPosition;
   Offset? _indexTipPosition;
-  bool _isCameraAtTop = false;  // Track if camera is at top of device
-  bool _showCameraPreview = true;  // Camera preview toggle
+  bool _isCameraAtTop = false; // Track if camera is at top of device
+  bool _showCameraPreview = true; // Camera preview toggle
 
   @override
   void initState() {
@@ -85,7 +84,8 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
           _handLandmarks = result.landmarks;
           _isCameraAtTop = result.isCameraAtTop;
 
-          _gestureStatus = result.gesture + (_isCameraAtTop ? ' [상단]' : ' [하단]');
+          _gestureStatus =
+              result.gesture + (_isCameraAtTop ? ' [상단]' : ' [하단]');
 
           if (result.pointerPosition != null) {
             final screenSize = MediaQuery.of(context).size;
@@ -124,8 +124,10 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
               _pointerPosition = Offset(x, y);
 
               // Transform thumbTip and indexTip positions as well
-              if (result.thumbTipPosition != null && result.indexTipPosition != null) {
-                double thumbX = result.thumbTipPosition!.dx * displayWidth + offsetX;
+              if (result.thumbTipPosition != null &&
+                  result.indexTipPosition != null) {
+                double thumbX =
+                    result.thumbTipPosition!.dx * displayWidth + offsetX;
                 double thumbY = result.thumbTipPosition!.dy * displayHeight;
                 if (!_isCameraAtTop) {
                   thumbY = (1.0 - result.thumbTipPosition!.dy) * displayHeight;
@@ -133,7 +135,8 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
                 thumbY += offsetY;
                 _thumbTipPosition = Offset(thumbX, thumbY);
 
-                double indexX = result.indexTipPosition!.dx * displayWidth + offsetX;
+                double indexX =
+                    result.indexTipPosition!.dx * displayWidth + offsetX;
                 double indexY = result.indexTipPosition!.dy * displayHeight;
                 if (!_isCameraAtTop) {
                   indexY = (1.0 - result.indexTipPosition!.dy) * displayHeight;
@@ -165,7 +168,8 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
           } else if (result.gesture == '드래그!' && _pointerPosition != null) {
             // 드래그 시작 - mousedown
             widget.onGestureDrag('start', _pointerPosition!);
-          } else if (result.gesture.contains('드래그') && _pointerPosition != null) {
+          } else if (result.gesture.contains('드래그') &&
+              _pointerPosition != null) {
             // 드래그 중 - mousemove
             widget.onGestureDrag('move', _pointerPosition!);
           } else if (result.gesture == '드래그 완료') {
@@ -181,14 +185,21 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
             }
           } else if (result.gesture.contains('스크롤')) {
             // 스크롤 속도 추출 (예: "스크롤! (50)" -> 50)
-            final match = RegExp(r'스크롤.*?\((-?\d+)\)').firstMatch(result.gesture);
+            final match = RegExp(
+              r'스크롤.*?\((-?\d+)\)',
+            ).firstMatch(result.gesture);
             if (match != null) {
               final scrollAmount = int.parse(match.group(1)!);
               // 양수 = 아래로 이동 = 아래로 스크롤 (down scroll)
               // 음수 = 위로 이동 = 위로 스크롤 (up scroll)
               final direction = scrollAmount > 0 ? 'down' : 'up';
-              debugPrint('📜 SCROLL overlay: amount=$scrollAmount, dir=$direction');
-              widget.onGestureSwipe(direction, scrollAmount: scrollAmount.abs());
+              debugPrint(
+                '📜 SCROLL overlay: amount=$scrollAmount, dir=$direction',
+              );
+              widget.onGestureSwipe(
+                direction,
+                scrollAmount: scrollAmount.abs(),
+              );
             }
           }
         });
@@ -489,8 +500,10 @@ class DottedLinePainter extends CustomPainter {
     while (currentDistance < length) {
       final x1 = start.dx + unitX * currentDistance;
       final y1 = start.dy + unitY * currentDistance;
-      final x2 = start.dx + unitX * (currentDistance + dashWidth).clamp(0, length);
-      final y2 = start.dy + unitY * (currentDistance + dashWidth).clamp(0, length);
+      final x2 =
+          start.dx + unitX * (currentDistance + dashWidth).clamp(0, length);
+      final y2 =
+          start.dy + unitY * (currentDistance + dashWidth).clamp(0, length);
 
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
       currentDistance += dashWidth + dashSpace;

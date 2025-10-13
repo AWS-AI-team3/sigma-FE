@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'package:camera/camera.dart';
 import 'dart:typed_data';
 import '../services/face_auth_service.dart';
 import '../mixins/camera_mixin.dart';
@@ -61,9 +60,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen>
       body: Stack(
         children: [
           // Back button
-          FaceBackButton(
-            onTap: () => Navigator.pop(context),
-          ),
+          FaceBackButton(onTap: () => Navigator.pop(context)),
 
           // Title
           const Positioned(
@@ -133,18 +130,18 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen>
     } catch (e) {
       print('❌ Photo capture error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('사진 촬영에 실패했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('사진 촬영에 실패했습니다.')));
       }
     }
   }
 
   Future<void> _handleAuthenticate() async {
     if (_capturedImageBytes == null || _presignedData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('먼저 사진을 촬영해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('먼저 사진을 촬영해주세요.')));
       return;
     }
 

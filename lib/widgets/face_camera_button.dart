@@ -56,11 +56,7 @@ class FaceCameraButton extends StatelessWidget {
           color: Colors.blue,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.camera_alt,
-          color: Colors.white,
-          size: 30,
-        ),
+        child: const Icon(Icons.camera_alt, color: Colors.white, size: 30),
       ),
     );
   }
@@ -75,11 +71,7 @@ class FaceCameraButton extends StatelessWidget {
           color: Colors.blue,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-          size: 30,
-        ),
+        child: const Icon(Icons.check, color: Colors.white, size: 30),
       ),
     );
   }
@@ -94,11 +86,7 @@ class FaceCameraButton extends StatelessWidget {
           color: Colors.blue,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.refresh,
-          color: Colors.white,
-          size: 30,
-        ),
+        child: const Icon(Icons.refresh, color: Colors.white, size: 30),
       ),
     );
   }

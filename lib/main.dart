@@ -76,21 +76,14 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade400,
-              Colors.purple.shade400,
-            ],
+            colors: [Colors.blue.shade400, Colors.purple.shade400],
           ),
         ),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.gesture,
-                size: 100,
-                color: Colors.white,
-              ),
+              Icon(Icons.gesture, size: 100, color: Colors.white),
               SizedBox(height: 24),
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),

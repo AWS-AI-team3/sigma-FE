@@ -10,8 +10,10 @@ class AppConstants {
 
   static const String userInfo = '$apiVersion/user/info';
 
-  static const String faceRegisterPresign = '$apiVersion/faces/register/presign';
-  static const String faceRegisterComplete = '$apiVersion/faces/register/complete';
+  static const String faceRegisterPresign =
+      '$apiVersion/faces/register/presign';
+  static const String faceRegisterComplete =
+      '$apiVersion/faces/register/complete';
 
   static const String faceAuthPresign = '$apiVersion/faces/auth/presign';
   static const String faceAuthComplete = '$apiVersion/faces/auth/complete';

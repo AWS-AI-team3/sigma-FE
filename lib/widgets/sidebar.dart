@@ -31,7 +31,9 @@ class _SidebarState extends State<Sidebar> {
     final String currentTitle = _getTitleFromUrl(currentUrl);
 
     // 다이얼로그로 이름 입력받기
-    final TextEditingController nameController = TextEditingController(text: currentTitle);
+    final TextEditingController nameController = TextEditingController(
+      text: currentTitle,
+    );
 
     final result = await showDialog<bool>(
       context: context,
@@ -41,16 +43,20 @@ class _SidebarState extends State<Sidebar> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('이름', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text(
+              '이름',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                hintText: '즐겨찾기 이름',
-              ),
+              decoration: const InputDecoration(hintText: '즐겨찾기 이름'),
               autofocus: true,
             ),
             const SizedBox(height: 12),
-            const Text('URL', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text(
+              'URL',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             Text(
               currentUrl,
               style: const TextStyle(fontSize: 12),
@@ -81,15 +87,15 @@ class _SidebarState extends State<Sidebar> {
       if (success) {
         widget.onBookmarksChanged();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('즐겨찾기에 추가되었습니다')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('즐겨찾기에 추가되었습니다')));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이미 즐겨찾기에 있습니다')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('이미 즐겨찾기에 있습니다')));
         }
       }
     }
@@ -129,9 +135,9 @@ class _SidebarState extends State<Sidebar> {
       await BookmarkService.deleteBookmark(bookmark.url);
       widget.onBookmarksChanged();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${bookmark.name}이(가) 삭제되었습니다')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${bookmark.name}이(가) 삭제되었습니다')));
       }
     }
   }
@@ -142,9 +148,7 @@ class _SidebarState extends State<Sidebar> {
       width: 120,
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        border: Border(
-          right: BorderSide(color: Colors.grey[300]!, width: 1),
-        ),
+        border: Border(right: BorderSide(color: Colors.grey[300]!, width: 1)),
       ),
       child: Column(
         children: [
@@ -182,10 +186,7 @@ class _SidebarState extends State<Sidebar> {
                 const SizedBox(height: 4),
                 Text(
                   '제스처',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[700]),
                 ),
                 Switch(
                   value: widget.isGestureEnabled,
@@ -224,10 +225,17 @@ class _SidebarState extends State<Sidebar> {
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      backgroundColor: _isDeleteMode ? Colors.red : Colors.grey[300],
-                      foregroundColor: _isDeleteMode ? Colors.white : Colors.grey[700],
+                      backgroundColor: _isDeleteMode
+                          ? Colors.red
+                          : Colors.grey[300],
+                      foregroundColor: _isDeleteMode
+                          ? Colors.white
+                          : Colors.grey[700],
                     ),
-                    child: Icon(_isDeleteMode ? Icons.close : Icons.delete, size: 20),
+                    child: Icon(
+                      _isDeleteMode ? Icons.close : Icons.delete,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
@@ -278,7 +286,9 @@ class _SidebarState extends State<Sidebar> {
                                       size: 32,
                                       color: _isDeleteMode
                                           ? Colors.red
-                                          : (isActive ? Colors.blue : Colors.grey[600]),
+                                          : (isActive
+                                                ? Colors.blue
+                                                : Colors.grey[600]),
                                     );
                                   },
                                 ),
@@ -309,8 +319,8 @@ class _SidebarState extends State<Sidebar> {
                                 color: _isDeleteMode
                                     ? Colors.red
                                     : (isActive
-                                        ? Colors.blue[700]
-                                        : Colors.grey[700]),
+                                          ? Colors.blue[700]
+                                          : Colors.grey[700]),
                                 fontWeight: isActive
                                     ? FontWeight.bold
                                     : FontWeight.normal,

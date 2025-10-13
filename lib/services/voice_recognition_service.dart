@@ -163,7 +163,9 @@ class VoiceRecognitionService {
         );
 
         _transcriptController.add(transcript);
-        print('📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})');
+        print(
+          '📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})',
+        );
       }
     } catch (e) {
       print('❌ Error handling message: $e');
@@ -180,8 +182,12 @@ class VoiceRecognitionService {
     _reconnectTimer?.cancel();
     _reconnectAttempts++;
 
-    final delay = Duration(seconds: 2 * _reconnectAttempts); // Exponential backoff
-    print('🔄 Scheduling reconnection attempt $_reconnectAttempts in ${delay.inSeconds}s');
+    final delay = Duration(
+      seconds: 2 * _reconnectAttempts,
+    ); // Exponential backoff
+    print(
+      '🔄 Scheduling reconnection attempt $_reconnectAttempts in ${delay.inSeconds}s',
+    );
 
     _reconnectTimer = Timer(delay, () async {
       print('🔄 Attempting to reconnect...');
@@ -210,8 +216,5 @@ class TranscriptResult {
   final String text;
   final bool isPartial;
 
-  TranscriptResult({
-    required this.text,
-    required this.isPartial,
-  });
+  TranscriptResult({required this.text, required this.isPartial});
 }

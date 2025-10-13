@@ -63,6 +63,7 @@ dependencies:
   # Audio recording for iOS
   record: ^6.1.2
 
+  google_mlkit_pose_detection: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

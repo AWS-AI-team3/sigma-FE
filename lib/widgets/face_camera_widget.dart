@@ -71,10 +71,6 @@ class FaceCameraWidget extends StatelessWidget {
     }
 
     // 로딩 중
-    return const Center(
-      child: CircularProgressIndicator(
-        color: Colors.blue,
-      ),
-    );
+    return const Center(child: CircularProgressIndicator(color: Colors.blue));
   }
 }
