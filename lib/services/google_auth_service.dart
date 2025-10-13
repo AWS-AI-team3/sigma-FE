@@ -41,6 +41,10 @@ class GoogleAuthService {
       final auth = await account.authentication;
       final idToken = auth.idToken;
 
+      print('🔑 ID Token (full): $idToken');
+      print('🔑 Access Token (full): ${auth.accessToken}');
+      print('🔑 Server Auth Code (full): ${auth.serverAuthCode}');
+
       if (idToken == null) {
         print('❌ ID Token is null');
         return {'success': false, 'error': 'Failed to get ID token'};
@@ -50,7 +54,7 @@ class GoogleAuthService {
 
       // 백엔드 API로 ID Token 전송 (필수)
       final response = await ApiClient.post(
-        '/v1/auth/google/login',
+        '/v2/auth/google/login',
         body: {'idToken': idToken},
         includeAuth: false,
       );
