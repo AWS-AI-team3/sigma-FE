@@ -267,12 +267,20 @@ class _SidebarState extends State<Sidebar> {
                           children: [
                             Stack(
                               children: [
-                                Icon(
-                                  _getIconForUrl(bookmark.url),
-                                  size: 32,
-                                  color: _isDeleteMode
-                                      ? Colors.red
-                                      : (isActive ? Colors.blue : Colors.grey[600]),
+                                // Favicon 이미지
+                                Image.network(
+                                  bookmark.faviconUrl,
+                                  width: 32,
+                                  height: 32,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      _getIconForUrl(bookmark.url),
+                                      size: 32,
+                                      color: _isDeleteMode
+                                          ? Colors.red
+                                          : (isActive ? Colors.blue : Colors.grey[600]),
+                                    );
+                                  },
                                 ),
                                 if (_isDeleteMode)
                                   Positioned(
