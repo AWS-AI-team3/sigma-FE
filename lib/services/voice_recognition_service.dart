@@ -4,7 +4,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class VoiceRecognitionService {
   static const String _wsUrl =
-      'wss://4tj4nr6tca.execute-api.ap-northeast-2.amazonaws.com/dev/';
+      'wss://4tj4nr6tca.execute-api.ap-northeast-2.amazonaws.com/dev';
 
   WebSocketChannel? _channel;
   final StreamController<TranscriptResult> _transcriptController =
@@ -15,6 +15,9 @@ class VoiceRecognitionService {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
+
+  // Command response handling
+  Completer<String?>? _commandCompleter;
 
   // Transcript stream for UI consumption
   Stream<TranscriptResult> get transcriptStream => _transcriptController.stream;
@@ -73,7 +76,7 @@ class VoiceRecognitionService {
     }
   }
 
-  // Start transcription
+  // Start transcription (using optimized version)
   Future<bool> startTranscription() async {
     if (!_isConnected) {
       print('❌ Not connected to WebSocket');
@@ -87,13 +90,13 @@ class VoiceRecognitionService {
 
     try {
       final message = {
-        'action': 'transcribe_streaming',
+        'action': 'transcribe_optimized',
         'type': 'start_transcribe',
       };
 
       _channel!.sink.add(json.encode(message));
       _isRecording = true;
-      print('🎤 Started transcription');
+      print('🎤 Started transcription (optimized)');
       return true;
     } catch (e) {
       print('❌ Failed to start transcription: $e');
@@ -101,7 +104,7 @@ class VoiceRecognitionService {
     }
   }
 
-  // Send audio data
+  // Send audio data (using optimized version)
   Future<bool> sendAudioData(String base64Audio) async {
     if (!_isConnected || !_isRecording) {
       return false;
@@ -109,7 +112,7 @@ class VoiceRecognitionService {
 
     try {
       final message = {
-        'action': 'transcribe_streaming',
+        'action': 'transcribe_optimized',
         'type': 'send_audio',
         'data': base64Audio,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -123,7 +126,7 @@ class VoiceRecognitionService {
     }
   }
 
-  // Stop transcription
+  // Stop transcription (using optimized version)
   Future<bool> stopTranscription() async {
     if (!_isConnected) {
       return false;
@@ -136,7 +139,7 @@ class VoiceRecognitionService {
 
     try {
       final message = {
-        'action': 'transcribe_streaming',
+        'action': 'transcribe_optimized',
         'type': 'stop_transcribe',
       };
 
@@ -147,6 +150,41 @@ class VoiceRecognitionService {
     } catch (e) {
       print('❌ Failed to stop transcription: $e');
       return false;
+    }
+  }
+
+  // Generate command using AI (v2)
+  Future<String?> generateCommand(String voiceInput) async {
+    if (!_isConnected) {
+      print('❌ Not connected to WebSocket');
+      return null;
+    }
+
+    try {
+      print('🤖 Requesting AI command generation for: "$voiceInput"');
+
+      // Create new completer for this request
+      _commandCompleter = Completer<String?>();
+
+      final message = {
+        'action': 'generate_command_v2',
+        'type': 'request_command',
+        'request': voiceInput,
+      };
+
+      _channel!.sink.add(json.encode(message));
+
+      // Wait for response with timeout
+      return await _commandCompleter!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('⏱️ AI command generation timeout');
+          return null;
+        },
+      );
+    } catch (e) {
+      print('❌ Failed to generate command: $e');
+      return null;
     }
   }
 
@@ -166,6 +204,17 @@ class VoiceRecognitionService {
         print(
           '📝 Transcript: ${transcript.text} (partial: ${transcript.isPartial})',
         );
+      } else if (data['type'] == 'respond_command') {
+        // Handle AI command response
+        if (_commandCompleter != null && !_commandCompleter!.isCompleted) {
+          if (data['success'] == true && data['command'] != null) {
+            print('✅ AI generated command: ${data['command']}');
+            _commandCompleter!.complete(data['command']);
+          } else {
+            print('❌ AI command generation failed: ${data['message']}');
+            _commandCompleter!.complete(null);
+          }
+        }
       }
     } catch (e) {
       print('❌ Error handling message: $e');

@@ -8,6 +8,9 @@ class Sidebar extends StatefulWidget {
   final bool isGestureEnabled;
   final Function(bool) onGestureToggle;
   final VoidCallback onBookmarksChanged;
+  final bool isWebSocketConnected;
+  final bool isVoiceRecording;
+  final VoidCallback onWebSocketReconnect;
 
   const Sidebar({
     super.key,
@@ -17,6 +20,9 @@ class Sidebar extends StatefulWidget {
     required this.isGestureEnabled,
     required this.onGestureToggle,
     required this.onBookmarksChanged,
+    required this.isWebSocketConnected,
+    required this.isVoiceRecording,
+    required this.onWebSocketReconnect,
   });
 
   @override
@@ -198,6 +204,58 @@ class _SidebarState extends State<Sidebar> {
           ),
 
           const Divider(height: 1),
+
+          // WebSocket Status (only show when gesture enabled)
+          if (widget.isGestureEnabled)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              child: GestureDetector(
+                onTap: widget.isWebSocketConnected ? null : widget.onWebSocketReconnect,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: widget.isWebSocketConnected
+                        ? Colors.green[50]
+                        : Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: widget.isWebSocketConnected
+                          ? Colors.green
+                          : Colors.red,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        widget.isWebSocketConnected
+                            ? Icons.wifi
+                            : Icons.wifi_off,
+                        size: 20,
+                        color: widget.isWebSocketConnected
+                            ? Colors.green
+                            : Colors.red,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.isVoiceRecording
+                            ? '녹음 중'
+                            : (widget.isWebSocketConnected ? '연결됨' : '연결 끊김'),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: widget.isWebSocketConnected
+                              ? Colors.green[800]
+                              : Colors.red[800],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          if (widget.isGestureEnabled) const Divider(height: 1),
 
           // Add/Delete Mode Buttons
           Padding(

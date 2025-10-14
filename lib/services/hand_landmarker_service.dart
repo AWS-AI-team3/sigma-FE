@@ -60,6 +60,13 @@ class HandLandmarkerService {
   Offset? _lastSmoothedPosition;
   static const double SMOOTHING_FACTOR = 0.3; // 0~1, 낮을수록 부드러움
 
+  // Cursor stabilization (커서 고정)
+  Offset? _stabilizedCursorPosition; // 고정된 커서 위치
+  Offset? _lastWristPosition; // 이전 손목 위치 (움직임 감지용)
+  static const double MOVEMENT_THRESHOLD = 0.015; // 이 거리 이하로 움직이면 커서 고정
+  static const int STABILITY_FRAMES = 3; // 연속으로 작은 움직임이 N번 유지되어야 고정
+  int _stabilityCounter = 0; // 안정 카운터
+
   // Pinch detection thresholds
   static const double PINCH_THRESHOLD = 0.02; // 2핑거 핀치 감지 거리
   static const double SCROLL_PINCH_THRESHOLD = 0.04; // 3핑거 스크롤 감지 거리 (더 여유있게)
@@ -153,17 +160,68 @@ class HandLandmarkerService {
       (thumbTip.y + indexTip.y) / 2,
     );
 
-    // 커서 스무딩 (손떨림 보정)
-    final pointerPosition = _lastSmoothedPosition == null
-        ? rawPointerPosition
-        : Offset(
-            _lastSmoothedPosition!.dx +
-                (rawPointerPosition.dx - _lastSmoothedPosition!.dx) *
-                    SMOOTHING_FACTOR,
-            _lastSmoothedPosition!.dy +
-                (rawPointerPosition.dy - _lastSmoothedPosition!.dy) *
-                    SMOOTHING_FACTOR,
-          );
+    // 손목 위치
+    final wristPosition = Offset(wrist.x, wrist.y);
+
+    // 움직임 감지 및 커서 안정화 (손목 기준)
+    Offset pointerPosition;
+
+    if (_lastWristPosition != null) {
+      // 손목의 이동 거리 계산
+      final dx = wristPosition.dx - _lastWristPosition!.dx;
+      final dy = wristPosition.dy - _lastWristPosition!.dy;
+      final movement = dart_math.sqrt(dx * dx + dy * dy);
+
+      if (movement < MOVEMENT_THRESHOLD) {
+        // 움직임이 작음 → 안정 카운터 증가
+        _stabilityCounter++;
+
+        if (_stabilityCounter >= STABILITY_FRAMES) {
+          // 충분히 안정됨 → 커서 고정
+          if (_stabilizedCursorPosition == null) {
+            // 스무딩된 마지막 위치를 고정 위치로 설정
+            _stabilizedCursorPosition = _lastSmoothedPosition ?? rawPointerPosition;
+            debugPrint('🔒 CURSOR LOCKED at (${_stabilizedCursorPosition!.dx.toStringAsFixed(3)}, ${_stabilizedCursorPosition!.dy.toStringAsFixed(3)})');
+          }
+          // 고정된 위치 사용 (절대 변경 안 함)
+          pointerPosition = _stabilizedCursorPosition!;
+        } else {
+          // 아직 안정화 중 → 스무딩 적용
+          pointerPosition = _lastSmoothedPosition == null
+              ? rawPointerPosition
+              : Offset(
+                  _lastSmoothedPosition!.dx +
+                      (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
+                  _lastSmoothedPosition!.dy +
+                      (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+                );
+        }
+      } else {
+        // 움직임이 큼 → 커서 고정 해제
+        if (_stabilizedCursorPosition != null) {
+          debugPrint('🔓 CURSOR UNLOCKED (movement: ${movement.toStringAsFixed(3)})');
+        }
+        _stabilityCounter = 0;
+        _stabilizedCursorPosition = null;
+
+        // 스무딩 적용
+        pointerPosition = _lastSmoothedPosition == null
+            ? rawPointerPosition
+            : Offset(
+                _lastSmoothedPosition!.dx +
+                    (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
+                _lastSmoothedPosition!.dy +
+                    (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+              );
+      }
+    } else {
+      // 첫 프레임
+      pointerPosition = rawPointerPosition;
+      _stabilityCounter = 0;
+      _stabilizedCursorPosition = null;
+    }
+
+    _lastWristPosition = wristPosition;
     _lastSmoothedPosition = pointerPosition;
 
     String gesture = '대기 중';
@@ -364,6 +422,11 @@ class HandLandmarkerService {
     _currentState = GestureState.idle;
     _gestureStartPosition = null;
     _lastSmoothedPosition = null;
+
+    // 손이 감지되지 않을 때만 커서 안정화 상태 초기화
+    _lastWristPosition = null;
+    _stabilizedCursorPosition = null;
+    _stabilityCounter = 0;
   }
 
   double _calculateDistance(HandLandmark p1, HandLandmark p2) {

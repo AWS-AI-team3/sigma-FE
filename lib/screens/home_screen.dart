@@ -4,7 +4,6 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../widgets/sidebar.dart';
 import '../widgets/gesture_camera_overlay.dart';
 import '../widgets/voice_subtitle_overlay.dart';
-import '../widgets/websocket_status_indicator.dart';
 import '../services/voice_recognition_service.dart';
 import '../services/audio_recording_service.dart';
 import '../services/bookmark_service.dart';
@@ -236,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleVoiceCommand(String command) async {
     print('🎙️ Voice command: $command');
 
-    // 즐겨찾기 찾기
+    // 1. 즐겨찾기 찾기
     final bookmark = await BookmarkService.findBookmarkByVoice(command);
     if (bookmark != null) {
       print('✅ Found bookmark: ${bookmark.name} -> ${bookmark.url}');
@@ -253,20 +252,73 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 특수 명령어 처리
+    // 2. 특수 명령어 처리
     if (command.contains('뒤로') || command.contains('back')) {
       _webViewController.goBack();
       print('⬅️ Navigate back');
+      return;
     } else if (command.contains('앞으로') || command.contains('forward')) {
       _webViewController.goForward();
       print('➡️ Navigate forward');
+      return;
     } else if (command.contains('새로고침') ||
         command.contains('refresh') ||
         command.contains('reload')) {
       _webViewController.reload();
       print('🔄 Reload page');
+      return;
+    }
+
+    // 3. AI 명령어 생성 (즐겨찾기 매칭 실패시)
+    print('🤖 No bookmark match, trying AI command generation...');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('AI로 명령어 변환 중...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    final url = await _voiceService.generateCommand(command);
+
+    if (url != null && url.isNotEmpty) {
+      print('✅ AI generated URL: $url');
+
+      // URL 유효성 검사
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        _navigateToUrl(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('AI 명령: $url 로 이동'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        print('⚠️ Invalid URL from AI: $url');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('유효하지 않은 URL입니다'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
     } else {
-      print('❓ Unknown command: $command');
+      print('❌ AI command generation failed');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('명령을 이해할 수 없습니다: $command'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -339,6 +391,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
               onBookmarksChanged: _loadBookmarks,
+              isWebSocketConnected: _voiceService.isConnected,
+              isVoiceRecording: _isVoiceRecording,
+              onWebSocketReconnect: () async {
+                print('🔄 Manual reconnect requested');
+                final success = await _voiceService.reconnect();
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('WebSocket 재연결 성공')),
+                  );
+                }
+              },
             ),
 
             // WebView with Gesture Overlay
@@ -362,22 +425,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     VoiceSubtitleOverlay(
                       subtitle: _currentSubtitle,
                       isRecording: _isVoiceRecording,
-                    ),
-
-                  // WebSocket Status Indicator
-                  if (_isGestureEnabled)
-                    WebSocketStatusIndicator(
-                      isConnected: _voiceService.isConnected,
-                      isRecording: _isVoiceRecording,
-                      onReconnect: () async {
-                        print('🔄 Manual reconnect requested');
-                        final success = await _voiceService.reconnect();
-                        if (success && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('WebSocket 재연결 성공')),
-                          );
-                        }
-                      },
                     ),
                 ],
               ),
