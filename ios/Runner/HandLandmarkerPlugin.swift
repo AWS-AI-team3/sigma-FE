@@ -121,7 +121,7 @@ extension HandLandmarkerPlugin: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         let currentTimeMs = Int(Date().timeIntervalSince1970 * 1000)
-        if currentTimeMs - lastFrameTime < 100 { // Process max 10 fps
+        if currentTimeMs - lastFrameTime < 33 { // Process max 30 fps
             return
         }
         lastFrameTime = currentTimeMs

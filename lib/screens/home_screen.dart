@@ -332,29 +332,40 @@ class _HomeScreenState extends State<HomeScreen> {
         _currentSubtitle = '';
       });
 
-      // Start WebSocket transcription
-      await _voiceService.startTranscription();
-
-      // Start audio recording
-      await _audioService.startRecording();
-
-      print('✅ Voice recording started');
+      // Start WebSocket transcription and audio recording asynchronously
+      // Don't await to avoid blocking gesture detection stream
+      _voiceService.startTranscription().then((_) {
+        print('✅ WebSocket transcription started');
+      }).catchError((e) {
+        print('❌ Failed to start transcription: $e');
+      });
+      
+      _audioService.startRecording().then((success) {
+        if (success) {
+          print('✅ Audio recording started');
+        } else {
+          print('❌ Failed to start audio recording');
+        }
+      }).catchError((e) {
+        print('❌ Audio recording error: $e');
+      });
     } else if (!isRecording && _isVoiceRecording) {
       // 녹음 중지 전에 현재 자막으로 명령 실행
       final finalCommand = _currentSubtitle.trim();
 
-      // Stop recording
+      // Stop recording immediately (UI update)
       setState(() {
         _isVoiceRecording = false;
       });
 
-      // Stop audio recording
-      await _audioService.stopRecording();
-
-      // Stop WebSocket transcription
-      await _voiceService.stopTranscription();
-
-      print('🛑 Voice recording stopped');
+      // Stop audio recording and transcription asynchronously
+      _audioService.stopRecording().then((_) {
+        print('🛑 Audio recording stopped');
+      });
+      
+      _voiceService.stopTranscription().then((_) {
+        print('🛑 WebSocket transcription stopped');
+      });
 
       // 최종 명령 처리
       if (finalCommand.isNotEmpty) {

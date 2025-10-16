@@ -39,7 +39,31 @@ cd ..
 sudo gem install cocoapods
 ```
 
-### 4. 실행
+### 4. iOS 개발 팀 설정 (필수) 🔑
+
+다른 Apple Developer 계정으로 개발할 때는 **반드시** Xcode에서 팀을 설정해야 합니다:
+
+```bash
+# Xcode에서 프로젝트 열기
+open ios/Runner.xcworkspace
+```
+
+**Xcode에서:**
+1. 왼쪽 네비게이터에서 `Runner` 프로젝트 선택
+2. `TARGETS` → `Runner` 선택
+3. `Signing & Capabilities` 탭 클릭
+4. **Team** 드롭다운에서 자신의 Apple Developer 팀 선택
+   - 팀이 없다면: Xcode → Settings → Accounts에서 Apple ID 추가
+5. (선택사항) Bundle Identifier를 고유한 값으로 변경
+   - 기본값: `com.gesture.gestureBrowser`
+   - 예시: `com.yourcompany.gestureBrowser`
+
+⚠️ **중요**: 
+- 이 설정은 각 개발자가 **로컬에서만** 수정해야 합니다
+- `project.pbxproj` 파일의 Team 설정은 커밋하지 마세요
+- Bundle Identifier가 이미 사용 중이면 변경 필요
+
+### 5. 실행
 ```bash
 # 사용 가능한 디바이스 확인
 flutter devices
@@ -83,10 +107,26 @@ pod install --repo-update
 cd ..
 ```
 
-### Xcode 빌드 오류
-1. Xcode에서 `ios/Runner.xcworkspace` 열기 (⚠️ `.xcodeproj`가 아닌 `.xcworkspace` 열기)
-2. Signing & Capabilities에서 개발 팀 선택
-3. Bundle Identifier 확인
+### Xcode 코드 서명 오류 (Signing)
+
+```
+❌ Signing for "Runner" requires a development team.
+❌ No profiles for 'com.gesture.gestureBrowser' were found
+```
+
+**해결 방법:**
+1. Xcode에서 `ios/Runner.xcworkspace` 열기 (⚠️ `.xcodeproj`가 아닌 `.xcworkspace`)
+2. Runner 프로젝트 → TARGETS → Runner 선택
+3. **Signing & Capabilities** 탭에서:
+   - Team: 자신의 Apple Developer 계정 선택
+   - Bundle Identifier: 충돌 시 변경 (예: `com.yourname.gestureBrowser`)
+4. 시뮬레이터는 무료 계정으로도 가능, 실기기는 유료 계정 필요
+
+### Apple Developer 계정이 없는 경우
+1. Xcode → Settings (⌘ + ,) → Accounts
+2. 왼쪽 하단 `+` 버튼 → Apple ID 추가
+3. 로그인하면 자동으로 Personal Team 생성됨 (무료)
+4. 시뮬레이터 개발은 무료 계정으로 가능
 
 ## 📦 주요 의존성 패키지
 
@@ -134,7 +174,44 @@ class ApiKeys {
 - **ios** 브랜치: iOS 관련 개발
 - **develop** 브랜치: 개발 중인 기능
 
-## 🤝 기여하기
+## 🤝 기여하기 (협업 가이드)
+
+### 🔐 iOS 개발 시 주의사항
+
+**각 개발자는 자신의 Apple Developer 계정을 사용해야 합니다:**
+
+1. **Git에 커밋하지 말아야 할 파일:**
+   ```
+   ❌ ios/Runner.xcodeproj/project.pbxproj (Team ID 변경 시)
+   ❌ ios/Runner.xcodeproj/xcuserdata/
+   ✅ 위 파일들은 .gitignore에 이미 설정됨
+   ```
+
+2. **로컬에서만 수정:**
+   - Xcode Signing & Capabilities → Team 설정
+   - Bundle Identifier (충돌 시)
+   
+3. **협업 워크플로우:**
+   ```bash
+   # 클론 후
+   git clone <repo>
+   cd gesture_browser
+   
+   # Xcode에서 Team만 설정 (커밋 X)
+   open ios/Runner.xcworkspace
+   # → Signing & Capabilities → Team 선택
+   
+   # 개발 시작
+   flutter run
+   ```
+
+4. **Pull Request 전에:**
+   ```bash
+   # Team 설정이 변경되었다면 되돌리기
+   git checkout ios/Runner.xcodeproj/project.pbxproj
+   ```
+
+### 일반 기여 프로세스
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
