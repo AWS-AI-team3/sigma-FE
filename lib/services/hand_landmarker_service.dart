@@ -63,8 +63,9 @@ class HandLandmarkerService {
   // Cursor stabilization (커서 고정)
   Offset? _stabilizedCursorPosition; // 고정된 커서 위치
   Offset? _lastWristPosition; // 이전 손목 위치 (움직임 감지용)
-  static const double MOVEMENT_THRESHOLD = 0.015; // 이 거리 이하로 움직이면 커서 고정
-  static const int STABILITY_FRAMES = 3; // 연속으로 작은 움직임이 N번 유지되어야 고정
+  static const double MOVEMENT_THRESHOLD = 0.006; // 고정 조건: 더 작은 움직임만 고정 (0.015 → 0.008)
+  static const double BREAK_LOCK_THRESHOLD = 0.025; // 고정 해제: 더 민감하게 (0.04 → 0.025)
+  static const int STABILITY_FRAMES = 5; // 고정까지 더 오래 걸림 (3 → 5)
   int _stabilityCounter = 0; // 안정 카운터
 
   // Pinch detection thresholds
@@ -172,7 +173,16 @@ class HandLandmarkerService {
       final dy = wristPosition.dy - _lastWristPosition!.dy;
       final movement = dart_math.sqrt(dx * dx + dy * dy);
 
-      if (movement < MOVEMENT_THRESHOLD) {
+      // 커서가 고정된 상태에서 큰 움직임 감지 → 즉시 해제
+      if (_stabilizedCursorPosition != null && movement > BREAK_LOCK_THRESHOLD) {
+        debugPrint('🔓 CURSOR FORCE UNLOCKED (large movement: ${movement.toStringAsFixed(3)})');
+        _stabilityCounter = 0;
+        _stabilizedCursorPosition = null;
+        
+        // 즉시 새 위치로 이동
+        pointerPosition = rawPointerPosition;
+        _lastSmoothedPosition = rawPointerPosition;
+      } else if (movement < MOVEMENT_THRESHOLD) {
         // 움직임이 작음 → 안정 카운터 증가
         _stabilityCounter++;
 
@@ -197,7 +207,7 @@ class HandLandmarkerService {
                 );
         }
       } else {
-        // 움직임이 큼 → 커서 고정 해제
+        // 움직임이 중간 크기 → 커서 고정 해제
         if (_stabilizedCursorPosition != null) {
           debugPrint('🔓 CURSOR UNLOCKED (movement: ${movement.toStringAsFixed(3)})');
         }
