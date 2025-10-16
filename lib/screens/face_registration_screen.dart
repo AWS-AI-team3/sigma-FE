@@ -168,8 +168,8 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen>
         return;
       }
 
-      // 인증 완료 요청
-      final authResult = await FaceAuthService.completeFaceAuth(objectKey);
+      // 인증 완료 요청 (static 메서드 사용)
+      final authResult = await FaceAuthService.completeFaceAuthStatic(objectKey);
 
       if (authResult != null &&
           (authResult['sucess'] == true || authResult['success'] == true)) {

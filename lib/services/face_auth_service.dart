@@ -1,7 +1,55 @@
 import 'dart:typed_data';
+import 'package:camera/camera.dart';
 import 'api_client.dart';
 
 class FaceAuthService {
+  // Camera initialization
+  Future<CameraController?> initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return null;
+
+      // Use front camera for face auth
+      final frontCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+
+      final controller = CameraController(
+        frontCamera,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+
+      await controller.initialize();
+      return controller;
+    } catch (e) {
+      print('❌ Camera initialization error: $e');
+      return null;
+    }
+  }
+
+  // Get presigned URL for face auth
+  Future<Map<String, dynamic>?> getPresignedUrl() async {
+    return await ApiClient.post(
+      '/v1/faces/auth/presign',
+      body: {'contentType': 'image/jpeg'},
+    );
+  }
+
+  // Upload image to S3
+  Future<bool> uploadImageToS3(
+    String presignedUrl,
+    Uint8List imageBytes,
+  ) async {
+    return await ApiClient.uploadToS3(
+      presignedUrl,
+      imageBytes,
+      contentType: 'image/jpeg',
+    );
+  }
+
+  // Legacy static methods (deprecated)
   static Future<Map<String, dynamic>?>
   checkRegistrationAndGetPresignedUrl() async {
     return await ApiClient.post(
@@ -22,7 +70,18 @@ class FaceAuthService {
     );
   }
 
-  static Future<Map<String, dynamic>?> completeFaceAuth(
+  // Complete face authentication
+  Future<Map<String, dynamic>?> completeFaceAuth(
+    String authPhotoKey,
+  ) async {
+    return await ApiClient.post(
+      '/v1/faces/auth/complete',
+      body: {'authPhotokey': authPhotoKey},
+    );
+  }
+
+  // Legacy static method (deprecated)
+  static Future<Map<String, dynamic>?> completeFaceAuthStatic(
     String authPhotoKey,
   ) async {
     return await ApiClient.post(
