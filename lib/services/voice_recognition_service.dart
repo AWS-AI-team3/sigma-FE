@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:http/http.dart' as http;
+import 'auth_storage_service.dart';
 
 class VoiceRecognitionService {
-  static const String _wsUrl =
+  static const String _baseUrl = 'https://www.3-sigma-server.com';
+  static const String _wsBaseUrl =
       'wss://4tj4nr6tca.execute-api.ap-northeast-2.amazonaws.com/dev';
 
   WebSocketChannel? _channel;
@@ -25,6 +28,48 @@ class VoiceRecognitionService {
   bool get isConnected => _isConnected;
   bool get isRecording => _isRecording;
 
+  // Get gateway token from backend
+  Future<String?> _getGatewayToken() async {
+    try {
+      print('🔑 Requesting gateway token from backend...');
+
+      // Get user's access token
+      final accessToken = await AuthStorageService.getValidAccessToken();
+      if (accessToken == null) {
+        print('❌ No valid access token found');
+        return null;
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/v2/gateway/token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final token = data['data']?['gatewayToken'];
+
+        if (token != null) {
+          print('✅ Gateway token received');
+          return token;
+        } else {
+          print('❌ Gateway token not found in response');
+          return null;
+        }
+      } else {
+        print('❌ Failed to get gateway token: ${response.statusCode}');
+        print('📥 Response body: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error getting gateway token: $e');
+      return null;
+    }
+  }
+
   // Connect to WebSocket
   Future<bool> connect() async {
     if (_isConnected) {
@@ -33,8 +78,18 @@ class VoiceRecognitionService {
     }
 
     try {
-      print('🎤 Connecting to WebSocket: $_wsUrl');
-      _channel = WebSocketChannel.connect(Uri.parse(_wsUrl));
+      // Step 1: Get gateway token
+      final token = await _getGatewayToken();
+      if (token == null) {
+        print('❌ Cannot connect without gateway token');
+        return false;
+      }
+
+      // Step 2: Connect to WebSocket with token
+      final wsUrl = '$_wsBaseUrl?gatewayToken=$token';
+      print('🎤 Connecting to WebSocket with token: $_wsBaseUrl?gatewayToken=***');
+
+      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       // Listen for messages
       _channel!.stream.listen(
@@ -163,6 +218,9 @@ class VoiceRecognitionService {
     try {
       print('🤖 Requesting AI command generation for: "$voiceInput"');
 
+      // Start timing
+      final startTime = DateTime.now();
+
       // Create new completer for this request
       _commandCompleter = Completer<String?>();
 
@@ -175,13 +233,20 @@ class VoiceRecognitionService {
       _channel!.sink.add(json.encode(message));
 
       // Wait for response with timeout
-      return await _commandCompleter!.future.timeout(
+      final result = await _commandCompleter!.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           print('⏱️ AI command generation timeout');
           return null;
         },
       );
+
+      // Calculate response time
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      print('⏱️ AI response time: ${duration.inMilliseconds}ms (${(duration.inMilliseconds / 1000).toStringAsFixed(2)}s)');
+
+      return result;
     } catch (e) {
       print('❌ Failed to generate command: $e');
       return null;
