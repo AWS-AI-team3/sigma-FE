@@ -60,7 +60,8 @@ app.*.map.json
 **/ios/*.mode1v3
 **/ios/*.mode2v3
 **/ios/*.perspectivev3
-**/ios/Podfile.lock
+# DO NOT ignore Podfile.lock - it should be committed to ensure consistent dependencies
+# **/ios/Podfile.lock
 
 # macOS related
 **/macos/Pods/
