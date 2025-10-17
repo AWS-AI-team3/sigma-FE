@@ -64,6 +64,10 @@ dependencies:
   record: ^6.1.2
 
   google_mlkit_pose_detection: any
+  
+  # SVG support
+  flutter_svg: ^2.0.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -86,9 +90,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Add MediaPipe model
+  # Add MediaPipe model and other assets
   assets:
-    - assets/
+    - assets/models/      # ML models (hand_landmarker.task, etc.)
+    - assets/icons/       # SVG icons
+    - assets/images/      # PNG/JPG images
 
   # To add assets to your application, add an assets section, like this:
   # assets:

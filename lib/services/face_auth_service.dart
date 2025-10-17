@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:camera/camera.dart';
 import 'api_client.dart';
 
@@ -106,5 +107,41 @@ class FaceAuthService {
     }
 
     return result;
+  }
+
+  // 전체 얼굴 인증 프로세스 (이미지 경로로)
+  static Future<Map<String, dynamic>?> authenticate(String imagePath) async {
+    try {
+      // 1. Presigned URL 가져오기
+      final presignedResult = await checkRegistrationAndGetPresignedUrl();
+      if (presignedResult == null || presignedResult['data'] == null) {
+        return {'success': false, 'error': 'Failed to get presigned URL'};
+      }
+
+      final presignedUrl = presignedResult['data']['presignedUrl'];
+      final authPhotoKey = presignedResult['data']['authPhotokey'];
+
+      // 2. 이미지 읽기
+      final imageFile = File(imagePath);
+      final imageBytes = await imageFile.readAsBytes();
+
+      // 3. S3에 업로드
+      final uploadSuccess = await uploadAuthImageToS3(
+        presignedUrl,
+        imageBytes,
+        'image/jpeg',
+      );
+
+      if (!uploadSuccess) {
+        return {'success': false, 'error': 'Failed to upload image'};
+      }
+
+      // 4. 인증 완료 API 호출
+      final completeResult = await completeFaceAuthStatic(authPhotoKey);
+      return completeResult;
+    } catch (e) {
+      print('❌ Authentication error: $e');
+      return {'success': false, 'error': e.toString()};
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
 import 'face_enrollment_screen.dart';
@@ -116,98 +117,96 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.blue.shade400, Colors.purple.shade400],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: const Color(0xFFE9E9EA), // Figma 배경색
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 로고와 앱 이름
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 로고 또는 앱 이름
-                  const Icon(Icons.gesture, size: 120, color: Colors.white),
-                  const SizedBox(height: 24),
+                  // 로고 이미지
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 48,
+                    height: 46,
+                  ),
+                  const SizedBox(width: 20),
+                  // Sigma 텍스트
                   const Text(
-                    'Gesture Browser',
+                    'Sigma',
                     style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      fontFamily: 'Apple SD Gothic Neo',
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'MediaPipe Hand Tracking',
-                    style: TextStyle(fontSize: 18, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 80),
-
-                  // 구글 로그인 버튼
-                  if (_isLoading)
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                  else
-                    GestureDetector(
-                      onTap: () {
-                        print('🔵 GestureDetector Tapped!');
-                        _handleGoogleSignIn();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.login,
-                              color: Colors.blue.shade700,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Google로 로그인',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 40),
-
-                  // 안내 문구
-                  const Text(
-                    '로그인 후 얼굴 인증을 진행합니다',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                 ],
               ),
-            ),
+              
+              const SizedBox(height: 193), // 로고와 버튼 사이 간격
+
+                  // 구글 로그인 버튼
+              if (_isLoading)
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4285F4)),
+                )
+              else
+                GestureDetector(
+                  onTap: () {
+                    print('🔵 Google Sign In Button Tapped!');
+                    _handleGoogleSignIn();
+                  },
+                  child: Container(
+                    width: 300,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4285F4), // Google 파란색
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 35,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Google 로고 SVG - 색상 강제 지정
+                        SvgPicture.asset(
+                          'assets/icons/google_logo.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // 버튼 텍스트
+                        const Text(
+                          'Continue with Google',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
