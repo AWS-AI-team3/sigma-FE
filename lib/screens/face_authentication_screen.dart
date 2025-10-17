@@ -8,14 +8,15 @@ import '../widgets/face_camera_widget.dart';
 import '../widgets/face_camera_button.dart';
 import '../widgets/face_dialog.dart';
 
-class FaceRegistrationScreen extends StatefulWidget {
-  const FaceRegistrationScreen({super.key});
+class FaceAuthenticationScreen extends StatefulWidget {
+  const FaceAuthenticationScreen({super.key});
 
   @override
-  State<FaceRegistrationScreen> createState() => _FaceRegistrationScreenState();
+  State<FaceAuthenticationScreen> createState() =>
+      _FaceAuthenticationScreenState();
 }
 
-class _FaceRegistrationScreenState extends State<FaceRegistrationScreen>
+class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
     with CameraMixin {
   bool _isPhotoCaptured = false;
   Uint8List? _capturedImageBytes;
@@ -38,7 +39,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen>
 
   @override
   void onCameraInitialized() {
-    print('✅ Face registration camera initialized');
+    print('✅ Face authentication camera initialized');
   }
 
   @override

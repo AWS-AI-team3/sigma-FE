@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
 import 'face_enrollment_screen.dart';
-import 'face_registration_screen.dart';
+import 'face_authentication_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const FaceRegistrationScreen(),
+                  builder: (context) => const FaceAuthenticationScreen(),
                   settings: RouteSettings(arguments: faceCheckResult['data']),
                 ),
               );
