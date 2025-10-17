@@ -63,24 +63,40 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Figma frame: 836x584, Card: 285x419
+    // Scale to match iPad screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scale = screenWidth / 836; // Figma frame width
+
+    final cardWidth = 285 * scale;
+    final cardHeight = 419 * scale;
+
     return Scaffold(
       backgroundColor: const Color(0xFFE9E9EA),
       body: Center(
         child: Container(
-          width: 285,
-          height: 419,
+          width: cardWidth,
+          height: cardHeight,
           decoration: BoxDecoration(
             color: const Color(0xFFF0F0F0),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10 * scale),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.25),
-                blurRadius: 35,
-                offset: const Offset(3, 4),
+                blurRadius: 35 * scale,
+                offset: Offset(3 * scale, 4 * scale),
               ),
             ],
           ),
-          child: _buildContent(),
+          child: Transform.scale(
+            scale: scale,
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 285,
+              height: 419,
+              child: _buildContent(),
+            ),
+          ),
         ),
       ),
     );
@@ -103,104 +119,166 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   Widget _buildInitialScreen() {
     return Stack(
       children: [
-        Column(
-          children: [
-            const SizedBox(height: 65),
-            // Face avatar with circles
-            SizedBox(
-              width: 154,
-              height: 154,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Ellipse 5 (outer circle)
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/ellipse5.svg',
-                    width: 152,
-                    height: 152,
-                  ),
-                  // Ellipse 2 (inner circle)
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/ellipse2.svg',
-                    width: 161,
-                    height: 161,
-                  ),
-                  // Emoji placeholder
-                  const Text(
-                    '👨‍💼',
-                    style: TextStyle(fontSize: 96),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 45),
-            // Title
-            const Text(
-              '사용자 등록',
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 26),
-            // Description line 1
-            const Text(
-              '얼굴을 등록 하여 2차 인증을 합니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 6),
-            // Description line 2
-            const Text(
-              '얼굴이 정면이 되게 유지해주세요.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 35),
-            // Rectangle 14 button (Start button)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4E9CFF),
-                minimumSize: const Size(145, 34),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                shadowColor: Colors.black.withOpacity(0.25),
-                elevation: 8,
-              ),
-              onPressed: _onStartButtonPressed,
-              child: const Text(
-                '얼굴 등록 시작하기',
-                style: TextStyle(
-                  fontFamily: 'Apple SD Gothic Neo',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 10,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        // Exit bar (top-left)
+        // Exit bar - Figma: left=10, top=10 (48x12 with 3 circles)
         Positioned(
           left: 10,
           top: 10,
-          child: SvgPicture.asset(
-            'assets/images/face_enrollment/exit_bar.svg',
+          child: SizedBox(
             width: 48,
             height: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 종료 button (red) - returns to login screen
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFE5F57),
+                    ),
+                  ),
+                ),
+                // 숨기기 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+                // 전체화면 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Face avatar - Figma: left=63, top=65, size=154x154
+        Positioned(
+          left: 63,
+          top: 65,
+          child: SizedBox(
+            width: 154,
+            height: 154,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Camera preview (140x140 circle)
+                ClipOval(
+                  child: SizedBox(
+                    width: 140,
+                    height: 140,
+                    child: isCameraReady && cameraController != null
+                        ? cameraController!.buildPreview()
+                        : Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                  ),
+                ),
+                // Ellipse 5 - Green border circle (154x154, stroke 4px)
+                Container(
+                  width: 154,
+                  height: 154,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF27C841), // rgb(39, 200, 65)
+                      width: 4.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Text group - Figma: left=62 (centered), top=243
+        Positioned(
+          left: 62,
+          top: 243,
+          child: SizedBox(
+            width: 161,
+            child: Column(
+              children: [
+                // Title
+                const Text(
+                  '사용자 등록',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                // Description line 1
+                const Text(
+                  '얼굴을 등록 하여 2차 인증을 합니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Description line 2
+                const Text(
+                  '얼굴이 정면이 되게 유지해주세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Button - Figma: left=70, top=324, size=145x34
+        Positioned(
+          left: 70,
+          top: 324,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4E9CFF),
+              minimumSize: const Size(145, 34),
+              maximumSize: const Size(145, 34),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              shadowColor: Colors.black.withValues(alpha: 0.25),
+              elevation: 8,
+              padding: EdgeInsets.zero,
+            ),
+            onPressed: _onStartButtonPressed,
+            child: const Text(
+              '얼굴 등록 시작하기',
+              style: TextStyle(
+                fontFamily: 'Apple SD Gothic Neo',
+                fontWeight: FontWeight.w700,
+                fontSize: 10,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ],
@@ -211,93 +289,131 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   Widget _buildScanningScreen() {
     return Stack(
       children: [
-        Column(
-          children: [
-            const SizedBox(height: 82),
-            // Camera preview with scanning animation
-            SizedBox(
-              width: 154,
-              height: 154,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Ellipse 2 - Camera preview area (140x140)
-                  Positioned(
-                    left: 7,
-                    top: 7,
-                    child: ClipOval(
-                      child: SizedBox(
-                        width: 140,
-                        height: 140,
-                        child: isCameraReady && cameraController != null
-                            ? cameraController!.buildPreview()
-                            : Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                  // Ellipse 3 - Scanning ring animation
-                  Transform.rotate(
-                    angle: -math.pi / 2, // Start from top
-                    child: CustomPaint(
-                      size: const Size(154, 154),
-                      painter: ScanningRingPainter(
-                        progress: _animationController?.value ?? 0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 45),
-            // Title
-            const Text(
-              '사용자 등록',
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 26),
-            // Description line 1
-            const Text(
-              '얼굴을 등록 하여 2차 인증을 합니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 6),
-            // Description line 2
-            const Text(
-              '얼굴이 정면이 되게 유지해주세요.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-        // Exit bar (top-left)
+        // Exit bar - Figma: left=10, top=10 (48x12 with 3 circles)
         Positioned(
           left: 10,
           top: 10,
-          child: SvgPicture.asset(
-            'assets/images/face_enrollment/exit_bar.svg',
+          child: SizedBox(
             width: 48,
             height: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 종료 button (red) - returns to login screen
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFE5F57),
+                    ),
+                  ),
+                ),
+                // 숨기기 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+                // 전체화면 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Camera preview area - Figma: left=70, top=88 (Ellipse 2: 140x140)
+        Positioned(
+          left: 70,
+          top: 88,
+          child: ClipOval(
+            child: SizedBox(
+              width: 140,
+              height: 140,
+              child: isCameraReady && cameraController != null
+                  ? cameraController!.buildPreview()
+                  : Container(
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        // Ellipse 3 - Scanning ring animation (154x154, same as Ellipse 5)
+        // Figma: left=63, top=82
+        Positioned(
+          left: 63,
+          top: 82,
+          child: Transform.rotate(
+            angle: -math.pi / 2, // Start from top
+            child: CustomPaint(
+              size: const Size(154, 154),
+              painter: ScanningRingPainter(
+                progress: _animationController?.value ?? 0,
+              ),
+            ),
+          ),
+        ),
+        // Text group - Figma: left=62, top=243 (keeping same as initial screen)
+        Positioned(
+          left: 62,
+          top: 243,
+          child: SizedBox(
+            width: 161,
+            child: Column(
+              children: [
+                // Title
+                const Text(
+                  '사용자 등록',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                // Description line 1
+                const Text(
+                  '얼굴을 등록 하여 2차 인증을 합니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Description line 2
+                const Text(
+                  '얼굴이 정면이 되게 유지해주세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -308,76 +424,129 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   Widget _buildSuccessScreen() {
     return Stack(
       children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Success indicator
-            SizedBox(
-              width: 73,
-              height: 73,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Success circle background
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/success_circle.svg',
-                    width: 73,
-                    height: 73,
-                  ),
-                  // Check icon
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/check_icon.svg',
-                    width: 50,
-                    height: 50,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-            // Title
-            const Text(
-              '등록 완료',
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 26),
-            // Description line 1
-            const Text(
-              '얼굴 등록이 완료되었습니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 6),
-            // Description line 2
-            const Text(
-              '등록된 얼굴로 2차 인증됩니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-        // Exit bar (top-left)
+        // Exit bar - Figma: left=10, top=10 (48x12 with 3 circles)
         Positioned(
           left: 10,
           top: 10,
-          child: SvgPicture.asset(
-            'assets/images/face_enrollment/exit_bar.svg',
+          child: SizedBox(
             width: 48,
             height: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 종료 button (red) - returns to login screen
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFE5F57),
+                    ),
+                  ),
+                ),
+                // 숨기기 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+                // 전체화면 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Success indicator - Figma: left=108, top=122, size=73x73
+        Positioned(
+          left: 108,
+          top: 122,
+          child: SizedBox(
+            width: 73,
+            height: 73,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Ellipse 4 - Success circle background
+                Container(
+                  width: 73,
+                  height: 73,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF27C841), // Green
+                      width: 4.0,
+                    ),
+                  ),
+                ),
+                // Check icon - 50x50
+                Icon(
+                  Icons.check,
+                  size: 40,
+                  color: const Color(0xFF27C841),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Text group - Figma: left=62, top=284
+        Positioned(
+          left: 62,
+          top: 284,
+          child: SizedBox(
+            width: 161,
+            child: Column(
+              children: [
+                // Title
+                const Text(
+                  '등록 완료',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                // Description line 1
+                const Text(
+                  '얼굴 등록이 완료되었습니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Description line 2
+                const Text(
+                  '등록된 얼굴로 2차 인증됩니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -388,76 +557,132 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   Widget _buildFailureScreen() {
     return Stack(
       children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Failure indicator
-            SizedBox(
-              width: 73,
-              height: 73,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Failure circle background
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/failure_circle.svg',
-                    width: 73,
-                    height: 73,
-                  ),
-                  // Exclamation mark icon
-                  SvgPicture.asset(
-                    'assets/images/face_enrollment/exclamation_icon.svg',
-                    width: 50,
-                    height: 50,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-            // Title
-            const Text(
-              '등록 실패',
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 26),
-            // Description line 1
-            const Text(
-              '얼굴 등록에 실패하였습니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 6),
-            // Description line 2
-            const Text(
-              '재시도 하시기 바랍니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Apple SD Gothic Neo',
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-        // Exit bar (top-left)
+        // Exit bar - Figma: left=10, top=10 (48x12 with 3 circles)
         Positioned(
           left: 10,
           top: 10,
-          child: SvgPicture.asset(
-            'assets/images/face_enrollment/exit_bar.svg',
+          child: SizedBox(
             width: 48,
             height: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 종료 button (red) - returns to login screen
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFE5F57),
+                    ),
+                  ),
+                ),
+                // 숨기기 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+                // 전체화면 button (gray)
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDADADB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Failure indicator - Figma: left=105, top=122, size=76x73
+        Positioned(
+          left: 105,
+          top: 122,
+          child: SizedBox(
+            width: 76,
+            height: 73,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // face_signup - Red circle background
+                Positioned(
+                  left: 1.5,
+                  child: Container(
+                    width: 73,
+                    height: 73,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFDC3545), // Red
+                        width: 4.0,
+                      ),
+                    ),
+                  ),
+                ),
+                // Exclamation mark icon - 50x50
+                SvgPicture.asset(
+                  'assets/images/face_enrollment/exclamation_icon.svg',
+                  width: 50,
+                  height: 50,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Text group - Figma: left=62, top=284
+        Positioned(
+          left: 62,
+          top: 284,
+          child: SizedBox(
+            width: 161,
+            child: Column(
+              children: [
+                // Title
+                const Text(
+                  '등록 실패',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                // Description line 1
+                const Text(
+                  '얼굴 등록에 실패하였습니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Description line 2
+                const Text(
+                  '재시도 하시기 바랍니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Apple SD Gothic Neo',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -521,9 +746,15 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   Future<bool> _enrollFace(Uint8List imageBytes) async {
     try {
       print('📤 Starting face enrollment...');
+      print('📏 Image size: ${imageBytes.length} bytes');
 
       final presignResult = await FaceService.getPresignedUrl();
+      print('📨 Presign result: $presignResult');
+
       if (presignResult == null || presignResult['sucess'] != true) {
+        print('❌ Failed to get presigned URL');
+        print('   Result is null: ${presignResult == null}');
+        print('   Success flag: ${presignResult?['sucess']}');
         return false;
       }
 
@@ -531,14 +762,25 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
       final String contentType = presignResult['data']['contentType'];
       final String objectKey = presignResult['data']['objectKey'];
 
+      print('✅ Got presigned URL');
+      print('   Content-Type: $contentType');
+      print('   Object Key: $objectKey');
+
       final uploadSuccess = await FaceService.uploadImageToS3(
         presignedUrl,
         imageBytes,
         contentType,
       );
-      if (!uploadSuccess) return false;
 
+      if (!uploadSuccess) {
+        print('❌ S3 upload failed');
+        return false;
+      }
+
+      print('✅ S3 upload successful, completing registration...');
       final completeResult = await FaceService.completeFaceRegistration(objectKey);
+      print('📨 Complete result: $completeResult');
+
       return completeResult != null && completeResult['sucess'] == true;
     } catch (error) {
       print('❌ Face enrollment error: $error');
@@ -563,6 +805,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
 }
 
 // Ellipse 3 스캔 애니메이션을 위한 CustomPainter
+// Ellipse 5와 동일한 크기 (154x154), stroke 4px, 녹색
 class ScanningRingPainter extends CustomPainter {
   final double progress;
 
@@ -571,11 +814,11 @@ class ScanningRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 7; // Ellipse 2의 외곽을 따라 그리기
+    final radius = size.width / 2 - 2; // stroke 4px의 절반 고려
 
-    // Green scanning ring
+    // Green scanning ring - Figma color: rgb(39, 200, 65)
     final progressPaint = Paint()
-      ..color = const Color(0xFF28A745)
+      ..color = const Color(0xFF27C841)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;

@@ -95,6 +95,7 @@ flutter:
     - assets/models/      # ML models (hand_landmarker.task, etc.)
     - assets/icons/       # SVG icons
     - assets/images/      # PNG/JPG images
+    - assets/images/face_enrollment/  # Face enrollment SVG assets
 
   # To add assets to your application, add an assets section, like this:
   # assets:

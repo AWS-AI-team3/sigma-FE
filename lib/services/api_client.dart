@@ -108,6 +108,11 @@ class ApiClient {
     String contentType = AppConstants.contentTypeImageJpeg,
   }) async {
     try {
+      print('🔵 S3 Upload Starting...');
+      print('📍 Presigned URL: ${presignedUrl.substring(0, 100)}...');
+      print('📦 Content-Type: $contentType');
+      print('📏 Data size: ${data.length} bytes');
+
       ApiLogger.request('PUT', 'S3_UPLOAD');
       final response = await http.put(
         Uri.parse(presignedUrl),
@@ -115,9 +120,24 @@ class ApiClient {
         body: data,
       );
 
+      print('📊 S3 Response Status: ${response.statusCode}');
+      print('📥 S3 Response Body: ${response.body}');
+      print('📋 S3 Response Headers: ${response.headers}');
+
       ApiLogger.response(response.statusCode, 'S3_UPLOAD');
+
+      if (response.statusCode == 403) {
+        print('❌ 403 Forbidden - S3 Upload Failed');
+        print('🔍 Possible causes:');
+        print('   - Presigned URL expired');
+        print('   - Content-Type mismatch');
+        print('   - CORS issue');
+        print('   - Invalid signature');
+      }
+
       return response.statusCode == 200;
     } catch (error) {
+      print('💥 S3 upload exception: $error');
       ApiLogger.error('S3 upload failed', error);
       return false;
     }

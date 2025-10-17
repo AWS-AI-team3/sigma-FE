@@ -116,97 +116,114 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen dimensions
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Figma design dimensions: 836x584
+    // Scale factor to fit screen width (with some padding)
+    final containerWidth = screenWidth * 0.9; // 90% of screen width
+    final scale = containerWidth / 836;
+    final containerHeight = 584 * scale;
+
     return Scaffold(
       backgroundColor: const Color(0xFFE9E9EA), // Figma 배경색
       body: SafeArea(
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 로고와 앱 이름
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 로고 이미지
-                  Image.asset(
+          child: SizedBox(
+            width: containerWidth,
+            height: containerHeight,
+            child: Stack(
+              children: [
+                // Logo - Figma: x=331 (relative), y=218, w=48, h=46
+                Positioned(
+                  left: 331 * scale,
+                  top: 218 * scale,
+                  child: Image.asset(
                     'assets/images/logo.png',
-                    width: 48,
-                    height: 46,
+                    width: 48 * scale,
+                    height: 46 * scale,
                   ),
-                  const SizedBox(width: 20),
-                  // Sigma 텍스트
-                  const Text(
+                ),
+                // Sigma text - Figma: x=385 (relative), y=224, w=120, h=37
+                Positioned(
+                  left: 385 * scale,
+                  top: 224 * scale,
+                  child: Text(
                     'Sigma',
                     style: TextStyle(
-                      fontSize: 40,
+                      fontSize: 40 * scale,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                       fontFamily: 'Apple SD Gothic Neo',
                     ),
                   ),
-                ],
-              ),
-              
-              const SizedBox(height: 193), // 로고와 버튼 사이 간격
-
-                  // 구글 로그인 버튼
-              if (_isLoading)
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4285F4)),
-                )
-              else
-                GestureDetector(
-                  onTap: () {
-                    print('🔵 Google Sign In Button Tapped!');
-                    _handleGoogleSignIn();
-                  },
-                  child: Container(
-                    width: 300,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4285F4), // Google 파란색
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 35,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Google 로고 SVG - 색상 강제 지정
-                        SvgPicture.asset(
-                          'assets/icons/google_logo.svg',
-                          width: 20,
-                          height: 20,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // 버튼 텍스트
-                        const Text(
-                          'Continue with Google',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-            ],
+                // Google button - Figma: x=269 (relative), y=411, w=300, h=48
+                Positioned(
+                  left: 269 * scale,
+                  top: 411 * scale,
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 300 * scale,
+                          height: 48 * scale,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFF4285F4),
+                              ),
+                            ),
+                          ),
+                        )
+                      : GestureDetector(
+                          onTap: () {
+                            print('🔵 Google Sign In Button Tapped!');
+                            _handleGoogleSignIn();
+                          },
+                          child: Container(
+                            width: 300 * scale,
+                            height: 48 * scale,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4285F4), // Google Blue
+                              borderRadius: BorderRadius.circular(12 * scale),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 35 * scale,
+                                  offset: Offset(0, 5 * scale),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Google logo
+                                SvgPicture.asset(
+                                  'assets/icons/google_logo.svg',
+                                  width: 20 * scale,
+                                  height: 20 * scale,
+                                  colorFilter: const ColorFilter.mode(
+                                    Colors.white,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                SizedBox(width: 16 * scale),
+                                // Button text
+                                Text(
+                                  'Continue with Google',
+                                  style: TextStyle(
+                                    fontSize: 14 * scale,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    fontFamily: 'Inter',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
