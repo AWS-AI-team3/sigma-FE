@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/bookmark_service.dart';
+import '../services/user_service.dart';
 
 class Sidebar extends StatefulWidget {
   final List<Bookmark> bookmarks;
@@ -31,6 +32,22 @@ class Sidebar extends StatefulWidget {
 
 class _SidebarState extends State<Sidebar> {
   bool _isDeleteMode = false;
+  Map<String, dynamic>? _userInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await UserService.getUserInfo();
+    if (mounted && info != null && info['sucess'] == true) {
+      setState(() {
+        _userInfo = info['data'];
+      });
+    }
+  }
 
   Future<void> _addCurrentPageToBookmarks() async {
     final String currentUrl = widget.currentUrl;
@@ -148,16 +165,206 @@ class _SidebarState extends State<Sidebar> {
     }
   }
 
+  Widget _buildProfileCard() {
+    if (_userInfo == null) return const SizedBox.shrink();
+
+    return Container(
+      width: 62,
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Profile Image with Badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Profile Image (20x20)
+              ClipOval(
+                child: _userInfo!['profileUrl'] != null
+                    ? Image.network(
+                        _userInfo!['profileUrl'],
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 20,
+                            height: 20,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.person, size: 12),
+                          );
+                        },
+                      )
+                    : Container(
+                        width: 20,
+                        height: 20,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.person, size: 12),
+                      ),
+              ),
+              // Badge
+              Positioned(
+                right: -8,
+                bottom: -2,
+                child: Container(
+                  width: 14,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _userInfo!['subscriptStatus'] == 'PAID'
+                        ? const Color(0xFF4E9CFF)
+                        : const Color(0xFF9A9A9A),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _userInfo!['subscriptStatus'] == 'PAID' ? 'pro' : 'free',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(right: BorderSide(color: Colors.grey[300]!, width: 1)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(13),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 109), // Position for Rectangle 22
+
+          // Rectangle 22 - Profile Card
+          _buildProfileCard(),
+
+          const SizedBox(height: 5), // Gap between cards
+
+          // Rectangle 13 - Bookmarks Card
+          Container(
+            width: 62,
+            constraints: const BoxConstraints(maxHeight: 274),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F0F0),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Profile Section OLD - REMOVE THIS
+                if (false)
+            Container(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  // Profile Image with Subscription Badge
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Profile Image (30x30)
+                      ClipOval(
+                        child: _userInfo!['profileUrl'] != null
+                            ? Image.network(
+                                _userInfo!['profileUrl'],
+                                width: 30,
+                                height: 30,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 30,
+                                    height: 30,
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 20,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 30,
+                                height: 30,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.person,
+                                  size: 20,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                      ),
+                      // Subscription Badge (Rectangle 17 position: relative to profile)
+                      // Figma: Rectangle at left=45-29=16, top=194-171=23
+                      Positioned(
+                        left: 16,
+                        top: 23,
+                        child: Container(
+                          width: 14,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _userInfo!['subscriptStatus'] == 'PAID'
+                                ? const Color(0xFF4E9CFF)
+                                : const Color(0xFF9A9A9A),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            _userInfo!['subscriptStatus'] == 'PAID'
+                                ? 'pro'
+                                : 'free',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // User Name
+                  Text(
+                    _userInfo!['userName'] ?? '',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+          const Divider(height: 1),
+
           // Header
           Container(
             padding: const EdgeInsets.all(16),

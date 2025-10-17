@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import '../widgets/sidebar.dart';
+import '../widgets/floating_sidebar.dart';
 import '../widgets/gesture_camera_overlay.dart';
 import '../widgets/voice_subtitle_overlay.dart';
 import '../services/voice_recognition_service.dart';
@@ -21,6 +21,12 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isGestureEnabled = false;
 
   List<Bookmark> _bookmarks = [];
+
+  // Sidebar show callback
+  VoidCallback? _showSidebarCallback;
+
+  // Sidebar key to access hover methods
+  final GlobalKey<FloatingSidebarState> _sidebarKey = GlobalKey<FloatingSidebarState>();
 
   // Voice recognition
   final VoiceRecognitionService _voiceService = VoiceRecognitionService();
@@ -388,59 +394,98 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Row(
-          children: [
-            // Sidebar
-            Sidebar(
-              bookmarks: _bookmarks,
-              currentUrl: _currentUrl,
-              onBookmarkTap: _navigateToUrl,
-              isGestureEnabled: _isGestureEnabled,
-              onGestureToggle: (value) {
-                setState(() {
-                  _isGestureEnabled = value;
-                });
-              },
-              onBookmarksChanged: _loadBookmarks,
-              isWebSocketConnected: _voiceService.isConnected,
-              isVoiceRecording: _isVoiceRecording,
-              onWebSocketReconnect: () async {
-                print('🔄 Manual reconnect requested');
-                final success = await _voiceService.reconnect();
-                if (success && mounted) {
+        child: GestureDetector(
+          // Two-finger double tap to show sidebar
+          onDoubleTapDown: (details) {
+            if (details.kind != null) {
+              // Trigger show sidebar
+              _showSidebarCallback?.call();
+            }
+          },
+          child: Stack(
+            children: [
+              // Full-screen WebView
+              WebViewWidget(controller: _webViewController),
+
+            // Gesture Camera Overlay
+            if (_isGestureEnabled)
+              GestureCameraOverlay(
+                onGestureClick: _handleGestureClick,
+                onGestureDrag: _handleGestureDrag,
+                onGestureSwipe: _handleGestureSwipe,
+                onVoiceRecording: _handleVoiceRecording,
+              ),
+
+            // Voice Subtitle Overlay
+            if (_isGestureEnabled)
+              VoiceSubtitleOverlay(
+                subtitle: _currentSubtitle,
+                isRecording: _isVoiceRecording,
+              ),
+
+            // Hover detection area (left edge of screen, always present)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: MouseRegion(
+                onEnter: (_) {
+                  print('🖱️ Hover area ENTER');
+                  _sidebarKey.currentState?.onHoverEnter();
+                },
+                onExit: (_) {
+                  print('🖱️ Hover area EXIT');
+                  _sidebarKey.currentState?.onHoverExit();
+                },
+                child: Container(
+                  width: 100, // 100px wide hover detection strip
+                  color: Colors.transparent,
+                ),
+              ),
+            ),
+
+            // Floating Sidebar (left-side overlay)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: FloatingSidebar(
+                key: _sidebarKey,
+                bookmarks: _bookmarks,
+                currentUrl: _currentUrl,
+                onBookmarkTap: _navigateToUrl,
+                isGestureEnabled: _isGestureEnabled,
+                onGestureToggle: (value) {
+                  setState(() {
+                    _isGestureEnabled = value;
+                  });
+                },
+                onBookmarksChanged: _loadBookmarks,
+                isWebSocketConnected: _voiceService.isConnected,
+                isVoiceRecording: _isVoiceRecording,
+                onWebSocketReconnect: () async {
+                  print('🔄 Manual reconnect requested');
+                  await _voiceService.reconnect();
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('WebSocket 재연결 성공')),
                   );
-                }
-              },
+                },
+                onRegisterShowCallback: (callback) {
+                  _showSidebarCallback = callback;
+                },
+              ),
             ),
 
-            // WebView with Gesture Overlay
-            Expanded(
-              child: Stack(
-                children: [
-                  // WebView
-                  WebViewWidget(controller: _webViewController),
-
-                  // Gesture Camera Overlay
-                  if (_isGestureEnabled)
-                    GestureCameraOverlay(
-                      onGestureClick: _handleGestureClick,
-                      onGestureDrag: _handleGestureDrag,
-                      onGestureSwipe: _handleGestureSwipe,
-                      onVoiceRecording: _handleVoiceRecording,
-                    ),
-
-                  // Voice Subtitle Overlay
-                  if (_isGestureEnabled)
-                    VoiceSubtitleOverlay(
-                      subtitle: _currentSubtitle,
-                      isRecording: _isVoiceRecording,
-                    ),
-                ],
+            // Cursor layer (topmost - above everything)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  color: Colors.transparent,
+                ),
               ),
             ),
           ],
+        ),
         ),
       ),
     );
