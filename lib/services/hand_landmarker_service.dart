@@ -18,6 +18,7 @@ class HandDetectionResult {
   final bool isCameraAtTop;
   final Offset? thumbTipPosition;
   final Offset? indexTipPosition;
+  final GestureState gestureState; // Current pinch state
 
   HandDetectionResult({
     required this.landmarks,
@@ -26,6 +27,7 @@ class HandDetectionResult {
     this.isCameraAtTop = false,
     this.thumbTipPosition,
     this.indexTipPosition,
+    this.gestureState = GestureState.idle,
   });
 }
 
@@ -145,6 +147,7 @@ class HandLandmarkerService {
       return HandDetectionResult(
         landmarks: landmarks,
         isCameraAtTop: isCameraAtTop,
+        gestureState: GestureState.idle,
       );
     }
 
@@ -425,6 +428,7 @@ class HandLandmarkerService {
       isCameraAtTop: isCameraAtTop,
       thumbTipPosition: null, // 더 이상 사용 안 함
       indexTipPosition: null, // 더 이상 사용 안 함
+      gestureState: _currentState, // Add current pinch state
     );
   }
 

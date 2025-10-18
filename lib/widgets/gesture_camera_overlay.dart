@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as dart_math;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -8,6 +9,7 @@ class GestureCameraOverlay extends StatefulWidget {
   final Function(String, Offset) onGestureDrag; // Drag callback with action
   final Function(String, {int? scrollAmount}) onGestureSwipe;
   final Function(bool)? onVoiceRecording; // Voice recording callback
+  final VoidCallback? onLeftEdgeHover; // Left edge hover callback
 
   const GestureCameraOverlay({
     super.key,
@@ -15,6 +17,7 @@ class GestureCameraOverlay extends StatefulWidget {
     required this.onGestureDrag,
     required this.onGestureSwipe,
     this.onVoiceRecording,
+    this.onLeftEdgeHover,
   });
 
   @override
@@ -31,6 +34,17 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
   Offset? _thumbTipPosition;
   Offset? _indexTipPosition;
   bool _isCameraAtTop = false; // Track if camera is at top of device
+
+  // Left edge hover detection
+  Timer? _leftEdgeHoverTimer;
+  bool _isOnLeftEdge = false;
+  static const double _leftEdgeWidth = 100.0; // Left edge detection zone width
+  static const Duration _hoverDuration = Duration(seconds: 1); // 1 second hover
+
+  // Cursor colors based on gesture (from Figma with exact values)
+  Color _cursorColor = const Color(0x4D3D3D3D); // Default fill with alpha
+  Color _cursorStrokeColor = const Color(0xFF949494); // Default stroke
+  Color _cursorShadowColor = const Color(0x40000000); // Default shadow
 
   @override
   void initState() {
@@ -122,6 +136,9 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
 
               _pointerPosition = Offset(x, y);
 
+              // Check for left edge hover
+              _checkLeftEdgeHover(_pointerPosition);
+
               // Transform thumbTip and indexTip positions as well
               if (result.thumbTipPosition != null &&
                   result.indexTipPosition != null) {
@@ -152,7 +169,12 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
             _pointerPosition = null;
             _thumbTipPosition = null;
             _indexTipPosition = null;
+            // Cancel left edge hover when no pointer
+            _checkLeftEdgeHover(null);
           }
+
+          // Update cursor color based on pinch state (not gesture result)
+          _updateCursorColor(result.gestureState);
 
           // Handle gestures
           if (result.gesture == '🎤 녹음 중') {
@@ -222,62 +244,161 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
 
   @override
   void dispose() {
+    _leftEdgeHoverTimer?.cancel();
     _cameraController?.dispose();
     _handService?.dispose();
     super.dispose();
   }
 
+  void _checkLeftEdgeHover(Offset? position) {
+    if (position == null) {
+      // No pointer - cancel timer and reset
+      if (_isOnLeftEdge) {
+        _leftEdgeHoverTimer?.cancel();
+        _isOnLeftEdge = false;
+      }
+      return;
+    }
+
+    final isOnLeftEdge = position.dx <= _leftEdgeWidth;
+
+    if (isOnLeftEdge && !_isOnLeftEdge) {
+      // Just entered left edge - start timer
+      _isOnLeftEdge = true;
+      _leftEdgeHoverTimer?.cancel();
+      _leftEdgeHoverTimer = Timer(_hoverDuration, () {
+        if (_isOnLeftEdge && mounted) {
+          print('🎯 Left edge hover triggered!');
+          widget.onLeftEdgeHover?.call();
+        }
+      });
+    } else if (!isOnLeftEdge && _isOnLeftEdge) {
+      // Left the left edge - cancel timer
+      _isOnLeftEdge = false;
+      _leftEdgeHoverTimer?.cancel();
+    }
+  }
+
+  void _updateCursorColor(GestureState gestureState) {
+    Color newFillColor;
+    Color newStrokeColor;
+    Color newShadowColor;
+
+    // Change cursor color based on pinch state (exact Figma colors with alpha)
+    switch (gestureState) {
+      case GestureState.voiceRecording:
+        // Ellipse 11 - Red (voice recording)
+        // Fill: #FF0C004D, Stroke: #FF9494, Shadow: #FE5F5740
+        newFillColor = const Color(0x4DFF0C00);
+        newStrokeColor = const Color(0xFFFF9494);
+        newShadowColor = const Color(0x40FE5F57);
+        break;
+      case GestureState.threePinch:
+      case GestureState.scrolling:
+        // Ellipse 10 - Green (3-finger pinch/scroll)
+        // Fill: #00A91B4D, Stroke: #77DB87, Shadow: #27C84140
+        newFillColor = const Color(0x4D00A91B);
+        newStrokeColor = const Color(0xFF77DB87);
+        newShadowColor = const Color(0x4027C841);
+        break;
+      case GestureState.twoPinch:
+      case GestureState.dragging:
+        // Ellipse 16 - Blue (2-finger pinch/drag)
+        // Fill: #0070FF4D, Stroke: #80B6FA, Shadow: #4E9CFF40
+        newFillColor = const Color(0x4D0070FF);
+        newStrokeColor = const Color(0xFF80B6FA);
+        newShadowColor = const Color(0x404E9CFF);
+        break;
+      case GestureState.idle:
+        // Ellipse 12 - Dark gray (idle)
+        // Fill: #3D3D3D4D, Stroke: #949494, Shadow: #00000040
+        newFillColor = const Color(0x4D3D3D3D);
+        newStrokeColor = const Color(0xFF949494);
+        newShadowColor = const Color(0x40000000);
+        break;
+    }
+
+    if (_cursorColor != newFillColor || _cursorStrokeColor != newStrokeColor || _cursorShadowColor != newShadowColor) {
+      setState(() {
+        _cursorColor = newFillColor;
+        _cursorStrokeColor = newStrokeColor;
+        _cursorShadowColor = newShadowColor;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-
     return Stack(
       children: [
+        // Transparent overlay to allow pointer events to pass through
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+
         // Gesture status
         Positioned(
           top: 144,
           right: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              _gestureStatus,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                _gestureStatus,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
         ),
 
-        // Hand landmarks overlay
-        if (_handLandmarks.isNotEmpty && _cameraController != null)
-          CustomPaint(
-            size: screenSize,
-            painter: HandLandmarksPainter(
-              landmarks: _handLandmarks,
-              isCameraAtTop: _isCameraAtTop,
-              cameraAspectRatio: _cameraController!.value.aspectRatio,
-              screenSize: screenSize,
-            ),
-          ),
+        // Hand landmarks overlay - DISABLED (only show cursor)
+        // if (_handLandmarks.isNotEmpty && _cameraController != null)
+        //   IgnorePointer(
+        //     child: CustomPaint(
+        //       size: screenSize,
+        //       painter: HandLandmarksPainter(
+        //         landmarks: _handLandmarks,
+        //         isCameraAtTop: _isCameraAtTop,
+        //         cameraAspectRatio: _cameraController!.value.aspectRatio,
+        //         screenSize: screenSize,
+        //       ),
+        //     ),
+        //   ),
 
-        // Pointer indicator
+        // Pointer indicator (changes color based on gesture - Figma design)
         if (_pointerPosition != null)
           Positioned(
-            left: _pointerPosition!.dx - 7.5,
-            top: _pointerPosition!.dy - 7.5,
-            child: Container(
-              width: 15,
-              height: 15,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.blue, width: 2),
-                color: Colors.blue.withOpacity(0.3),
+            left: _pointerPosition!.dx - 8,
+            top: _pointerPosition!.dy - 8,
+            child: IgnorePointer(
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _cursorColor, // Fill color with alpha
+                  border: Border.all(
+                    color: _cursorStrokeColor, // Stroke color (1px)
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _cursorShadowColor, // Shadow color with alpha
+                      blurRadius: 15.0, // Blur 15px
+                      offset: const Offset(0, 0),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

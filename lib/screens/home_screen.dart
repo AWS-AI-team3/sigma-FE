@@ -3,10 +3,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../widgets/floating_sidebar.dart';
 import '../widgets/gesture_camera_overlay.dart';
-import '../widgets/voice_subtitle_overlay.dart';
+import '../widgets/voice_recording_modal.dart';
 import '../services/voice_recognition_service.dart';
 import '../services/audio_recording_service.dart';
 import '../services/bookmark_service.dart';
+import '../services/user_service.dart';
+import '../services/google_auth_service.dart';
+import '../widgets/profile_modal.dart';
+import '../screens/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,21 +29,78 @@ class _HomeScreenState extends State<HomeScreen> {
   // Sidebar show callback
   VoidCallback? _showSidebarCallback;
 
-  // Sidebar key to access hover methods
-  final GlobalKey<FloatingSidebarState> _sidebarKey = GlobalKey<FloatingSidebarState>();
-
   // Voice recognition
   final VoiceRecognitionService _voiceService = VoiceRecognitionService();
   final AudioRecordingService _audioService = AudioRecordingService();
   String _currentSubtitle = '';
   bool _isVoiceRecording = false;
 
+  // Profile modal
+  bool _showProfileModal = false;
+  Map<String, dynamic>? _userInfo;
+
   @override
   void initState() {
     super.initState();
     _loadBookmarks();
+    _loadUserInfo();
     _initializeWebView();
     _initializeVoiceRecognition();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await UserService.getUserInfo();
+    if (mounted && info != null && info['sucess'] == true && info['data'] != null) {
+      setState(() {
+        _userInfo = info['data'];
+      });
+    }
+  }
+
+  void _showProfile() {
+    setState(() {
+      _showProfileModal = true;
+    });
+  }
+
+  Future<void> _handleLogout() async {
+    // Close modal first
+    setState(() {
+      _showProfileModal = false;
+    });
+
+    if (!mounted) return;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Call logout API
+    final authService = GoogleAuthService();
+    final success = await authService.signOut();
+
+    if (!mounted) return;
+
+    // Close loading indicator
+    Navigator.of(context).pop();
+
+    // Navigate to login screen
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
+
+    // Show result message
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그아웃 되었습니다')),
+      );
+    }
   }
 
   Future<void> _loadBookmarks() async {
@@ -171,7 +232,124 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleGestureClick(Offset position) {
-    // Convert screen coordinates to JavaScript click
+    print('🎯 Gesture click at: $position');
+
+    // Check if click is on sidebar area (left edge, approximately 100px)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scale = screenWidth / 836;
+    final sidebarWidth = 100 * scale;
+
+    // If modal is open, check modal area first (center of screen)
+    if (_showProfileModal) {
+      final modalWidth = 285 * scale;
+      final modalHeight = 419 * scale;
+      final screenHeight = MediaQuery.of(context).size.height;
+
+      final modalLeft = (screenWidth - modalWidth) / 2;
+      final modalRight = modalLeft + modalWidth;
+      final modalTop = (screenHeight - modalHeight) / 2;
+      final modalBottom = modalTop + modalHeight;
+
+      if (position.dx >= modalLeft && position.dx <= modalRight &&
+          position.dy >= modalTop && position.dy <= modalBottom) {
+        print('🎯 Click inside modal area - checking elements');
+
+        // Check close button (top-left)
+        final closeButtonLeft = modalLeft + 10 * scale;
+        final closeButtonTop = modalTop + 10 * scale;
+        final closeButtonSize = 12 * scale;
+
+        if (position.dx >= closeButtonLeft &&
+            position.dx <= closeButtonLeft + closeButtonSize &&
+            position.dy >= closeButtonTop &&
+            position.dy <= closeButtonTop + closeButtonSize) {
+          print('✅ Clicked close button');
+          setState(() {
+            _showProfileModal = false;
+          });
+          return;
+        }
+
+        // Check logout button (near bottom)
+        final logoutTop = modalTop + 361 * scale;
+        final logoutHeight = 12 * scale;
+
+        if (position.dy >= logoutTop && position.dy <= logoutTop + logoutHeight) {
+          print('✅ Clicked logout button');
+          _handleLogout();
+          return;
+        }
+
+        // Click on modal but not on interactive elements - do nothing
+        print('🎯 Click on modal background - ignoring');
+        return;
+      } else {
+        // Click outside modal - close it
+        print('✅ Click outside modal - closing');
+        setState(() {
+          _showProfileModal = false;
+        });
+        return;
+      }
+    }
+
+    // Check if click is on sidebar area
+    if (position.dx <= sidebarWidth) {
+      print('🎯 Click on sidebar area at: dx=${position.dx}, dy=${position.dy}');
+
+      // Sidebar has complex layout - it's vertically centered
+      // Calculate the same way as floating_sidebar.dart does
+      final screenHeight = MediaQuery.of(context).size.height;
+
+      // Main panel height calculation (from floating_sidebar.dart)
+      final baseHeight = 52.0 + 50.0 + 16.0 + 56.0 + 2.0; // 176
+      final bookmarkHeight = _bookmarks.length * 50.0;
+      final mainPanelHeight = (baseHeight + bookmarkHeight) * scale;
+
+      // Main panel is vertically centered
+      final mainPanelTop = (screenHeight - mainPanelHeight) / 2;
+
+      // Sidebar has left padding 13 * scale + container padding 10 * scale
+      final sidebarLeft = (13 + 10) * scale;
+      final buttonSize = 42 * scale;
+
+      print('   Sidebar left: $sidebarLeft, Main panel top: $mainPanelTop');
+      print('   Button size: $buttonSize');
+
+      // Profile button (first in main panel, with 10px top padding)
+      final profileTop = mainPanelTop + 10 * scale;
+      print('   Profile button: top=$profileTop, bottom=${profileTop + buttonSize}');
+
+      if (position.dx >= sidebarLeft &&
+          position.dx <= sidebarLeft + buttonSize &&
+          position.dy >= profileTop &&
+          position.dy <= profileTop + buttonSize) {
+        print('✅ Clicked profile button');
+        _showProfile();
+        return;
+      }
+
+      // Gesture toggle button (8px spacing after profile)
+      final gestureToggleTop = profileTop + buttonSize + 8 * scale;
+      print('   Gesture toggle: top=$gestureToggleTop, bottom=${gestureToggleTop + buttonSize}');
+
+      if (position.dx >= sidebarLeft &&
+          position.dx <= sidebarLeft + buttonSize &&
+          position.dy >= gestureToggleTop &&
+          position.dy <= gestureToggleTop + buttonSize) {
+        print('✅ Clicked gesture toggle button');
+        setState(() {
+          _isGestureEnabled = !_isGestureEnabled;
+        });
+        return;
+      }
+
+      print('🎯 Click on sidebar but not on profile or gesture toggle');
+      return;
+    }
+
+    // Otherwise, send click to WebView
+    print('🎯 Sending click to WebView');
     _webViewController.runJavaScript('''
       var element = document.elementFromPoint(${position.dx}, ${position.dy});
       if (element) {
@@ -407,49 +585,11 @@ class _HomeScreenState extends State<HomeScreen> {
               // Full-screen WebView
               WebViewWidget(controller: _webViewController),
 
-            // Gesture Camera Overlay
-            if (_isGestureEnabled)
-              GestureCameraOverlay(
-                onGestureClick: _handleGestureClick,
-                onGestureDrag: _handleGestureDrag,
-                onGestureSwipe: _handleGestureSwipe,
-                onVoiceRecording: _handleVoiceRecording,
-              ),
-
-            // Voice Subtitle Overlay
-            if (_isGestureEnabled)
-              VoiceSubtitleOverlay(
-                subtitle: _currentSubtitle,
-                isRecording: _isVoiceRecording,
-              ),
-
-            // Hover detection area (left edge of screen, always present)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: MouseRegion(
-                onEnter: (_) {
-                  print('🖱️ Hover area ENTER');
-                  _sidebarKey.currentState?.onHoverEnter();
-                },
-                onExit: (_) {
-                  print('🖱️ Hover area EXIT');
-                  _sidebarKey.currentState?.onHoverExit();
-                },
-                child: Container(
-                  width: 100, // 100px wide hover detection strip
-                  color: Colors.transparent,
-                ),
-              ),
-            ),
-
             // Floating Sidebar (left-side overlay)
             Positioned(
               left: 0,
               top: 0,
               child: FloatingSidebar(
-                key: _sidebarKey,
                 bookmarks: _bookmarks,
                 currentUrl: _currentUrl,
                 onBookmarkTap: _navigateToUrl,
@@ -473,17 +613,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRegisterShowCallback: (callback) {
                   _showSidebarCallback = callback;
                 },
+                onProfileTap: _showProfile,
               ),
             ),
 
-            // Cursor layer (topmost - above everything)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color: Colors.transparent,
+            // Profile Modal (below gesture overlay so cursor can interact with sidebar)
+            if (_showProfileModal)
+              ProfileModal(
+                userInfo: _userInfo,
+                onLogout: _handleLogout,
+                onClose: () {
+                  setState(() {
+                    _showProfileModal = false;
+                  });
+                },
+              ),
+
+            // Voice Recording Modal (centered at bottom)
+            if (_isGestureEnabled && _isVoiceRecording)
+              Positioned(
+                bottom: 50,
+                left: 0,
+                right: 0,
+                child: VoiceRecordingModal(
+                  transcription: _currentSubtitle.isNotEmpty ? _currentSubtitle : null,
                 ),
               ),
-            ),
+
+            // Gesture Camera Overlay (topmost - cursor must be above everything)
+            if (_isGestureEnabled)
+              GestureCameraOverlay(
+                onGestureClick: _handleGestureClick,
+                onGestureDrag: _handleGestureDrag,
+                onGestureSwipe: _handleGestureSwipe,
+                onVoiceRecording: _handleVoiceRecording,
+                onLeftEdgeHover: () {
+                  // Show sidebar when cursor hovers on left edge
+                  _showSidebarCallback?.call();
+                },
+              ),
           ],
         ),
         ),

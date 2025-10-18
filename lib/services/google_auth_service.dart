@@ -100,18 +100,40 @@ class GoogleAuthService {
   }
 
   // 로그아웃
-  Future<void> signOut() async {
+  Future<bool> signOut() async {
     try {
+      print('🔵 Starting logout...');
+
+      // 1. Call backend logout API
+      final response = await ApiClient.post(
+        '/v1/auth/logout',
+        includeAuth: true,
+      );
+
+      if (response != null) {
+        print('📡 Logout API response: $response');
+      }
+
+      // 2. Clear local tokens (regardless of API response)
+      await AuthStorageService.clearTokens();
+
+      // 3. Sign out from Google
       await _googleSignIn.signOut();
       _currentUser = null;
 
-      // 로그인 상태 제거
+      // 4. Clear all local data
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
       print('✅ Sign Out Success');
+      return true;
     } catch (error) {
       print('❌ Sign Out Error: $error');
+      // Even if logout fails, clear local data
+      await AuthStorageService.clearTokens();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      return false;
     }
   }
 
