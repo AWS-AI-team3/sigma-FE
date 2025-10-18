@@ -65,8 +65,10 @@ class HandLandmarkerService {
   // Cursor stabilization (커서 고정)
   Offset? _stabilizedCursorPosition; // 고정된 커서 위치
   Offset? _lastWristPosition; // 이전 손목 위치 (움직임 감지용)
-  static const double MOVEMENT_THRESHOLD = 0.006; // 고정 조건: 더 작은 움직임만 고정 (0.015 → 0.008)
-  static const double BREAK_LOCK_THRESHOLD = 0.025; // 고정 해제: 더 민감하게 (0.04 → 0.025)
+  static const double MOVEMENT_THRESHOLD =
+      0.006; // 고정 조건: 더 작은 움직임만 고정 (0.015 → 0.008)
+  static const double BREAK_LOCK_THRESHOLD =
+      0.025; // 고정 해제: 더 민감하게 (0.04 → 0.025)
   static const int STABILITY_FRAMES = 5; // 고정까지 더 오래 걸림 (3 → 5)
   int _stabilityCounter = 0; // 안정 카운터
 
@@ -177,11 +179,14 @@ class HandLandmarkerService {
       final movement = dart_math.sqrt(dx * dx + dy * dy);
 
       // 커서가 고정된 상태에서 큰 움직임 감지 → 즉시 해제
-      if (_stabilizedCursorPosition != null && movement > BREAK_LOCK_THRESHOLD) {
-        debugPrint('🔓 CURSOR FORCE UNLOCKED (large movement: ${movement.toStringAsFixed(3)})');
+      if (_stabilizedCursorPosition != null &&
+          movement > BREAK_LOCK_THRESHOLD) {
+        debugPrint(
+          '🔓 CURSOR FORCE UNLOCKED (large movement: ${movement.toStringAsFixed(3)})',
+        );
         _stabilityCounter = 0;
         _stabilizedCursorPosition = null;
-        
+
         // 즉시 새 위치로 이동
         pointerPosition = rawPointerPosition;
         _lastSmoothedPosition = rawPointerPosition;
@@ -193,8 +198,11 @@ class HandLandmarkerService {
           // 충분히 안정됨 → 커서 고정
           if (_stabilizedCursorPosition == null) {
             // 스무딩된 마지막 위치를 고정 위치로 설정
-            _stabilizedCursorPosition = _lastSmoothedPosition ?? rawPointerPosition;
-            debugPrint('🔒 CURSOR LOCKED at (${_stabilizedCursorPosition!.dx.toStringAsFixed(3)}, ${_stabilizedCursorPosition!.dy.toStringAsFixed(3)})');
+            _stabilizedCursorPosition =
+                _lastSmoothedPosition ?? rawPointerPosition;
+            debugPrint(
+              '🔒 CURSOR LOCKED at (${_stabilizedCursorPosition!.dx.toStringAsFixed(3)}, ${_stabilizedCursorPosition!.dy.toStringAsFixed(3)})',
+            );
           }
           // 고정된 위치 사용 (절대 변경 안 함)
           pointerPosition = _stabilizedCursorPosition!;
@@ -204,15 +212,19 @@ class HandLandmarkerService {
               ? rawPointerPosition
               : Offset(
                   _lastSmoothedPosition!.dx +
-                      (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
+                      (rawPointerPosition.dx - _lastSmoothedPosition!.dx) *
+                          SMOOTHING_FACTOR,
                   _lastSmoothedPosition!.dy +
-                      (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+                      (rawPointerPosition.dy - _lastSmoothedPosition!.dy) *
+                          SMOOTHING_FACTOR,
                 );
         }
       } else {
         // 움직임이 중간 크기 → 커서 고정 해제
         if (_stabilizedCursorPosition != null) {
-          debugPrint('🔓 CURSOR UNLOCKED (movement: ${movement.toStringAsFixed(3)})');
+          debugPrint(
+            '🔓 CURSOR UNLOCKED (movement: ${movement.toStringAsFixed(3)})',
+          );
         }
         _stabilityCounter = 0;
         _stabilizedCursorPosition = null;
@@ -222,9 +234,11 @@ class HandLandmarkerService {
             ? rawPointerPosition
             : Offset(
                 _lastSmoothedPosition!.dx +
-                    (rawPointerPosition.dx - _lastSmoothedPosition!.dx) * SMOOTHING_FACTOR,
+                    (rawPointerPosition.dx - _lastSmoothedPosition!.dx) *
+                        SMOOTHING_FACTOR,
                 _lastSmoothedPosition!.dy +
-                    (rawPointerPosition.dy - _lastSmoothedPosition!.dy) * SMOOTHING_FACTOR,
+                    (rawPointerPosition.dy - _lastSmoothedPosition!.dy) *
+                        SMOOTHING_FACTOR,
               );
       }
     } else {

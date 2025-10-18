@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/google_auth_service.dart';
 import '../services/face_auth_service.dart';
-import 'face_enrollment_screen.dart';
-import 'face_authentication_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,42 +38,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 faceCheckResult['success'] == true) {
               // 얼굴 등록 완료 - 얼굴 인증 화면으로 이동
               print('👤 Face registered, going to authentication');
-              Navigator.pushReplacement(
+              Navigator.pushReplacementNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const FaceAuthenticationScreen(),
-                  settings: RouteSettings(arguments: faceCheckResult['data']),
-                ),
+                '/face-auth',
+                arguments: faceCheckResult['data'],
               );
             } else if (faceCheckResult['error'] != null &&
                 faceCheckResult['error']['code'] == 'FACE_NOT_REGISTERED') {
               // 얼굴 등록 안됨 - 얼굴 등록 화면으로 이동
               print('📸 Face not registered, going to enrollment');
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FaceEnrollmentScreen(),
-                ),
-              );
+              Navigator.pushReplacementNamed(context, '/face-enroll');
             } else {
               // 기타 오류 - 얼굴 등록 화면으로 이동
               print('⚠️ Unknown response, going to enrollment');
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FaceEnrollmentScreen(),
-                ),
-              );
+              Navigator.pushReplacementNamed(context, '/face-enroll');
             }
           } else {
             // API 호출 실패 - 얼굴 등록 화면으로 이동
             print('❌ API call failed, going to enrollment');
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const FaceEnrollmentScreen(),
-              ),
-            );
+            Navigator.pushReplacementNamed(context, '/face-enroll');
           }
         }
       } else {
@@ -187,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12 * scale),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 35 * scale,
                                   offset: Offset(0, 5 * scale),
                                 ),

@@ -50,7 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserInfo() async {
     final info = await UserService.getUserInfo();
-    if (mounted && info != null && info['sucess'] == true && info['data'] != null) {
+    if (mounted &&
+        info != null &&
+        info['sucess'] == true &&
+        info['data'] != null) {
       setState(() {
         _userInfo = info['data'];
       });
@@ -75,9 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     // Call logout API
@@ -97,9 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Show result message
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그아웃 되었습니다')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('로그아웃 되었습니다')));
     }
   }
 
@@ -250,8 +251,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final modalTop = (screenHeight - modalHeight) / 2;
       final modalBottom = modalTop + modalHeight;
 
-      if (position.dx >= modalLeft && position.dx <= modalRight &&
-          position.dy >= modalTop && position.dy <= modalBottom) {
+      if (position.dx >= modalLeft &&
+          position.dx <= modalRight &&
+          position.dy >= modalTop &&
+          position.dy <= modalBottom) {
         print('🎯 Click inside modal area - checking elements');
 
         // Check close button (top-left)
@@ -274,7 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final logoutTop = modalTop + 361 * scale;
         final logoutHeight = 12 * scale;
 
-        if (position.dy >= logoutTop && position.dy <= logoutTop + logoutHeight) {
+        if (position.dy >= logoutTop &&
+            position.dy <= logoutTop + logoutHeight) {
           print('✅ Clicked logout button');
           _handleLogout();
           return;
@@ -295,7 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Check if click is on sidebar area
     if (position.dx <= sidebarWidth) {
-      print('🎯 Click on sidebar area at: dx=${position.dx}, dy=${position.dy}');
+      print(
+        '🎯 Click on sidebar area at: dx=${position.dx}, dy=${position.dy}',
+      );
 
       // Sidebar has complex layout - it's vertically centered
       // Calculate the same way as floating_sidebar.dart does
@@ -318,7 +324,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Profile button (first in main panel, with 10px top padding)
       final profileTop = mainPanelTop + 10 * scale;
-      print('   Profile button: top=$profileTop, bottom=${profileTop + buttonSize}');
+      print(
+        '   Profile button: top=$profileTop, bottom=${profileTop + buttonSize}',
+      );
 
       if (position.dx >= sidebarLeft &&
           position.dx <= sidebarLeft + buttonSize &&
@@ -331,7 +339,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Gesture toggle button (8px spacing after profile)
       final gestureToggleTop = profileTop + buttonSize + 8 * scale;
-      print('   Gesture toggle: top=$gestureToggleTop, bottom=${gestureToggleTop + buttonSize}');
+      print(
+        '   Gesture toggle: top=$gestureToggleTop, bottom=${gestureToggleTop + buttonSize}',
+      );
 
       if (position.dx >= sidebarLeft &&
           position.dx <= sidebarLeft + buttonSize &&
@@ -419,24 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleVoiceCommand(String command) async {
     print('🎙️ Voice command: $command');
 
-    // 1. 즐겨찾기 찾기
-    final bookmark = await BookmarkService.findBookmarkByVoice(command);
-    if (bookmark != null) {
-      print('✅ Found bookmark: ${bookmark.name} -> ${bookmark.url}');
-      _navigateToUrl(bookmark.url);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${bookmark.name} 페이지로 이동'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
-
-    // 2. 특수 명령어 처리
+    // 1. 특수 명령어 처리 (브라우저 제어)
     if (command.contains('뒤로') || command.contains('back')) {
       _webViewController.goBack();
       print('⬅️ Navigate back');
@@ -453,8 +446,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 3. AI 명령어 생성 (즐겨찾기 매칭 실패시)
-    print('🤖 No bookmark match, trying AI command generation...');
+    // 2. AI 명령어 생성 (WebSocket으로 바로 전송)
+    print('🤖 Sending to AI command generation...');
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -518,21 +511,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Start WebSocket transcription and audio recording asynchronously
       // Don't await to avoid blocking gesture detection stream
-      _voiceService.startTranscription().then((_) {
-        print('✅ WebSocket transcription started');
-      }).catchError((e) {
-        print('❌ Failed to start transcription: $e');
-      });
-      
-      _audioService.startRecording().then((success) {
-        if (success) {
-          print('✅ Audio recording started');
-        } else {
-          print('❌ Failed to start audio recording');
-        }
-      }).catchError((e) {
-        print('❌ Audio recording error: $e');
-      });
+      _voiceService
+          .startTranscription()
+          .then((_) {
+            print('✅ WebSocket transcription started');
+          })
+          .catchError((e) {
+            print('❌ Failed to start transcription: $e');
+          });
+
+      _audioService
+          .startRecording()
+          .then((success) {
+            if (success) {
+              print('✅ Audio recording started');
+            } else {
+              print('❌ Failed to start audio recording');
+            }
+          })
+          .catchError((e) {
+            print('❌ Audio recording error: $e');
+          });
     } else if (!isRecording && _isVoiceRecording) {
       // 녹음 중지 전에 현재 자막으로 명령 실행
       final finalCommand = _currentSubtitle.trim();
@@ -546,7 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _audioService.stopRecording().then((_) {
         print('🛑 Audio recording stopped');
       });
-      
+
       _voiceService.stopTranscription().then((_) {
         print('🛑 WebSocket transcription stopped');
       });
@@ -585,75 +584,77 @@ class _HomeScreenState extends State<HomeScreen> {
               // Full-screen WebView
               WebViewWidget(controller: _webViewController),
 
-            // Floating Sidebar (left-side overlay)
-            Positioned(
-              left: 0,
-              top: 0,
-              child: FloatingSidebar(
-                bookmarks: _bookmarks,
-                currentUrl: _currentUrl,
-                onBookmarkTap: _navigateToUrl,
-                isGestureEnabled: _isGestureEnabled,
-                onGestureToggle: (value) {
-                  setState(() {
-                    _isGestureEnabled = value;
-                  });
-                },
-                onBookmarksChanged: _loadBookmarks,
-                isWebSocketConnected: _voiceService.isConnected,
-                isVoiceRecording: _isVoiceRecording,
-                onWebSocketReconnect: () async {
-                  print('🔄 Manual reconnect requested');
-                  await _voiceService.reconnect();
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('WebSocket 재연결 성공')),
-                  );
-                },
-                onRegisterShowCallback: (callback) {
-                  _showSidebarCallback = callback;
-                },
-                onProfileTap: _showProfile,
-              ),
-            ),
-
-            // Profile Modal (below gesture overlay so cursor can interact with sidebar)
-            if (_showProfileModal)
-              ProfileModal(
-                userInfo: _userInfo,
-                onLogout: _handleLogout,
-                onClose: () {
-                  setState(() {
-                    _showProfileModal = false;
-                  });
-                },
-              ),
-
-            // Voice Recording Modal (centered at bottom)
-            if (_isGestureEnabled && _isVoiceRecording)
+              // Floating Sidebar (left-side overlay)
               Positioned(
-                bottom: 50,
                 left: 0,
-                right: 0,
-                child: VoiceRecordingModal(
-                  transcription: _currentSubtitle.isNotEmpty ? _currentSubtitle : null,
+                top: 0,
+                child: FloatingSidebar(
+                  bookmarks: _bookmarks,
+                  currentUrl: _currentUrl,
+                  onBookmarkTap: _navigateToUrl,
+                  isGestureEnabled: _isGestureEnabled,
+                  onGestureToggle: (value) {
+                    setState(() {
+                      _isGestureEnabled = value;
+                    });
+                  },
+                  onBookmarksChanged: _loadBookmarks,
+                  isWebSocketConnected: _voiceService.isConnected,
+                  isVoiceRecording: _isVoiceRecording,
+                  onWebSocketReconnect: () async {
+                    print('🔄 Manual reconnect requested');
+                    await _voiceService.reconnect();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('WebSocket 재연결 성공')),
+                    );
+                  },
+                  onRegisterShowCallback: (callback) {
+                    _showSidebarCallback = callback;
+                  },
+                  onProfileTap: _showProfile,
                 ),
               ),
 
-            // Gesture Camera Overlay (topmost - cursor must be above everything)
-            if (_isGestureEnabled)
-              GestureCameraOverlay(
-                onGestureClick: _handleGestureClick,
-                onGestureDrag: _handleGestureDrag,
-                onGestureSwipe: _handleGestureSwipe,
-                onVoiceRecording: _handleVoiceRecording,
-                onLeftEdgeHover: () {
-                  // Show sidebar when cursor hovers on left edge
-                  _showSidebarCallback?.call();
-                },
-              ),
-          ],
-        ),
+              // Profile Modal (below gesture overlay so cursor can interact with sidebar)
+              if (_showProfileModal)
+                ProfileModal(
+                  userInfo: _userInfo,
+                  onLogout: _handleLogout,
+                  onClose: () {
+                    setState(() {
+                      _showProfileModal = false;
+                    });
+                  },
+                ),
+
+              // Voice Recording Modal (centered at bottom)
+              if (_isGestureEnabled && _isVoiceRecording)
+                Positioned(
+                  bottom: 50,
+                  left: 0,
+                  right: 0,
+                  child: VoiceRecordingModal(
+                    transcription: _currentSubtitle.isNotEmpty
+                        ? _currentSubtitle
+                        : null,
+                  ),
+                ),
+
+              // Gesture Camera Overlay (topmost - cursor must be above everything)
+              if (_isGestureEnabled)
+                GestureCameraOverlay(
+                  onGestureClick: _handleGestureClick,
+                  onGestureDrag: _handleGestureDrag,
+                  onGestureSwipe: _handleGestureSwipe,
+                  onVoiceRecording: _handleVoiceRecording,
+                  onLeftEdgeHover: () {
+                    // Show sidebar when cursor hovers on left edge
+                    _showSidebarCallback?.call();
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );

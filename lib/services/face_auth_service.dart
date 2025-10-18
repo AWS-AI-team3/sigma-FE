@@ -72,9 +72,7 @@ class FaceAuthService {
   }
 
   // Complete face authentication
-  Future<Map<String, dynamic>?> completeFaceAuth(
-    String authPhotoKey,
-  ) async {
+  Future<Map<String, dynamic>?> completeFaceAuth(String authPhotoKey) async {
     return await ApiClient.post(
       '/v1/faces/auth/complete',
       body: {'authPhotokey': authPhotoKey},

@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'home_screen.dart';
 import 'dart:typed_data';
 import '../services/face_auth_service.dart';
+import '../services/google_auth_service.dart';
 import '../mixins/camera_mixin.dart';
 import 'dart:math' as math;
 
 enum AuthenticationStep {
-  initial,      // 초기 화면
-  scanning,     // 스캔 중
-  success,      // 인증 성공
-  failure,      // 인증 실패
+  initial, // 초기 화면
+  scanning, // 스캔 중
+  success, // 인증 성공
+  failure, // 인증 실패
 }
 
 class FaceAuthenticationScreen extends StatefulWidget {
@@ -33,12 +33,11 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
   void initState() {
     super.initState();
     initializeCamera();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..addListener(() {
-        setState(() {});
-      });
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 3))
+          ..addListener(() {
+            setState(() {});
+          });
   }
 
   @override
@@ -101,11 +100,7 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
           child: Transform.scale(
             scale: scale,
             alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: 285,
-              height: 419,
-              child: _buildContent(),
-            ),
+            child: SizedBox(width: 285, height: 419, child: _buildContent()),
           ),
         ),
       ),
@@ -139,10 +134,14 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -309,10 +308,14 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -357,9 +360,7 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
                   ? cameraController!.buildPreview()
                   : Container(
                       color: Colors.grey[300],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
             ),
           ),
@@ -444,10 +445,14 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -503,11 +508,7 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
                   ),
                 ),
                 // Check icon - 50x50
-                Icon(
-                  Icons.check,
-                  size: 40,
-                  color: const Color(0xFF27C841),
-                ),
+                Icon(Icons.check, size: 40, color: const Color(0xFF27C841)),
               ],
             ),
           ),
@@ -577,10 +578,14 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -702,9 +707,9 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
   // 시작 버튼 클릭 시 스캔 화면으로 전환
   void _onStartButtonPressed() {
     if (!isCameraReady || cameraController == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('카메라가 준비되지 않았습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('카메라가 준비되지 않았습니다.')));
       return;
     }
 
@@ -736,10 +741,7 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
         // 1초 후 HomeScreen으로 이동
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
+            Navigator.pushReplacementNamed(context, '/home');
           }
         });
       } else {
@@ -784,7 +786,9 @@ class _FaceAuthenticationScreenState extends State<FaceAuthenticationScreen>
 
       print('✅ S3 upload successful, completing authentication...');
       // 인증 완료 요청
-      final authResult = await FaceAuthService.completeFaceAuthStatic(objectKey);
+      final authResult = await FaceAuthService.completeFaceAuthStatic(
+        objectKey,
+      );
       print('📨 Auth complete result: $authResult');
 
       return authResult != null &&

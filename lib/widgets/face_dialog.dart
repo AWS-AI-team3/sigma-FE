@@ -10,7 +10,7 @@ class FaceDialog {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (BuildContext dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -91,7 +91,7 @@ class FaceDialog {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (BuildContext dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,

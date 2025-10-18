@@ -318,7 +318,9 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
         break;
     }
 
-    if (_cursorColor != newFillColor || _cursorStrokeColor != newStrokeColor || _cursorShadowColor != newShadowColor) {
+    if (_cursorColor != newFillColor ||
+        _cursorStrokeColor != newStrokeColor ||
+        _cursorShadowColor != newShadowColor) {
       setState(() {
         _cursorColor = newFillColor;
         _cursorStrokeColor = newStrokeColor;
@@ -333,9 +335,7 @@ class _GestureCameraOverlayState extends State<GestureCameraOverlay> {
       children: [
         // Transparent overlay to allow pointer events to pass through
         Positioned.fill(
-          child: IgnorePointer(
-            child: Container(color: Colors.transparent),
-          ),
+          child: IgnorePointer(child: Container(color: Colors.transparent)),
         ),
 
         // Gesture status

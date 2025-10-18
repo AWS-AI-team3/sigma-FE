@@ -24,12 +24,12 @@ class VoiceSubtitleOverlay extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: isRecording
-              ? Colors.red.withOpacity(0.9)
-              : Colors.black.withOpacity(0.8),
+              ? Colors.red.withValues(alpha: 0.9)
+              : Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

@@ -87,7 +87,9 @@ class VoiceRecognitionService {
 
       // Step 2: Connect to WebSocket with token
       final wsUrl = '$_wsBaseUrl?gatewayToken=$token';
-      print('🎤 Connecting to WebSocket with token: $_wsBaseUrl?gatewayToken=***');
+      print(
+        '🎤 Connecting to WebSocket with token: $_wsBaseUrl?gatewayToken=***',
+      );
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
@@ -244,7 +246,9 @@ class VoiceRecognitionService {
       // Calculate response time
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime);
-      print('⏱️ AI response time: ${duration.inMilliseconds}ms (${(duration.inMilliseconds / 1000).toStringAsFixed(2)}s)');
+      print(
+        '⏱️ AI response time: ${duration.inMilliseconds}ms (${(duration.inMilliseconds / 1000).toStringAsFixed(2)}s)',
+      );
 
       return result;
     } catch (e) {

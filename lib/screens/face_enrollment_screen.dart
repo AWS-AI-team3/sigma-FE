@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'login_screen.dart';
 import 'dart:typed_data';
 import '../services/face_service.dart';
+import '../services/google_auth_service.dart';
 import '../mixins/camera_mixin.dart';
 import 'dart:math' as math;
 
 enum EnrollmentStep {
-  initial,      // face_enroll1 - 초기 화면
-  scanning,     // face_enroll2 - 스캔 중
-  success,      // face_enroll3 - 등록 성공
-  failure,      // face_enroll4 - 등록 실패
+  initial, // face_enroll1 - 초기 화면
+  scanning, // face_enroll2 - 스캔 중
+  success, // face_enroll3 - 등록 성공
+  failure, // face_enroll4 - 등록 실패
 }
 
 class FaceEnrollmentScreen extends StatefulWidget {
@@ -30,12 +30,11 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   void initState() {
     super.initState();
     initializeCamera();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..addListener(() {
-        setState(() {});
-      });
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 3))
+          ..addListener(() {
+            setState(() {});
+          });
   }
 
   @override
@@ -82,7 +81,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
             borderRadius: BorderRadius.circular(10 * scale),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 35 * scale,
                 offset: Offset(3 * scale, 4 * scale),
               ),
@@ -91,11 +90,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
           child: Transform.scale(
             scale: scale,
             alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: 285,
-              height: 419,
-              child: _buildContent(),
-            ),
+            child: SizedBox(width: 285, height: 419, child: _buildContent()),
           ),
         ),
       ),
@@ -129,10 +124,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -209,9 +208,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
         // Text group - Figma: left=62 (centered), top=243
         Positioned(
           left: 62,
-          top: 243,
+          top: 245,
           child: SizedBox(
-            width: 161,
+            width: 170,
             child: Column(
               children: [
                 // Title
@@ -225,7 +224,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 10),
                 // Description line 1
                 const Text(
                   '얼굴을 등록 하여 2차 인증을 합니다.',
@@ -237,7 +236,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 // Description line 2
                 const Text(
                   '얼굴이 정면이 되게 유지해주세요.',
@@ -299,10 +298,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -347,9 +350,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                   ? cameraController!.buildPreview()
                   : Container(
                       color: Colors.grey[300],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
             ),
           ),
@@ -374,7 +375,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
           left: 62,
           top: 243,
           child: SizedBox(
-            width: 161,
+            width: 170,
             child: Column(
               children: [
                 // Title
@@ -388,7 +389,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 10),
                 // Description line 1
                 const Text(
                   '얼굴을 등록 하여 2차 인증을 합니다.',
@@ -400,7 +401,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 // Description line 2
                 const Text(
                   '얼굴이 정면이 되게 유지해주세요.',
@@ -434,10 +435,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -493,11 +498,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                   ),
                 ),
                 // Check icon - 50x50
-                Icon(
-                  Icons.check,
-                  size: 40,
-                  color: const Color(0xFF27C841),
-                ),
+                Icon(Icons.check, size: 40, color: const Color(0xFF27C841)),
               ],
             ),
           ),
@@ -507,7 +508,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
           left: 62,
           top: 284,
           child: SizedBox(
-            width: 161,
+            width: 170,
             child: Column(
               children: [
                 // Title
@@ -521,7 +522,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 10),
                 // Description line 1
                 const Text(
                   '얼굴 등록이 완료되었습니다.',
@@ -533,7 +534,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 // Description line 2
                 const Text(
                   '등록된 얼굴로 2차 인증됩니다.',
@@ -567,10 +568,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 종료 button (red) - returns to login screen
+                // 종료 button (red) - logout and returns to login screen
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  onTap: () async {
+                    final authService = GoogleAuthService();
+                    await authService.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   },
                   child: Container(
                     width: 12,
@@ -643,7 +648,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
           left: 62,
           top: 284,
           child: SizedBox(
-            width: 161,
+            width: 170,
             child: Column(
               children: [
                 // Title
@@ -657,7 +662,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 10),
                 // Description line 1
                 const Text(
                   '얼굴 등록에 실패하였습니다.',
@@ -669,7 +674,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 // Description line 2
                 const Text(
                   '재시도 하시기 바랍니다.',
@@ -692,9 +697,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
   // Rectangle 14 버튼 클릭 시 face_enroll2로 전환
   void _onStartButtonPressed() {
     if (!isCameraReady || cameraController == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('카메라가 준비되지 않았습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('카메라가 준비되지 않았습니다.')));
       return;
     }
 
@@ -726,9 +731,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
         // 1초 후 다음 페이지로 이동
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
-            Navigator.pushAndRemoveUntil(
+            Navigator.pushNamedAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              '/login',
               (route) => false,
             );
           }
@@ -778,7 +783,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen>
       }
 
       print('✅ S3 upload successful, completing registration...');
-      final completeResult = await FaceService.completeFaceRegistration(objectKey);
+      final completeResult = await FaceService.completeFaceRegistration(
+        objectKey,
+      );
       print('📨 Complete result: $completeResult');
 
       return completeResult != null && completeResult['sucess'] == true;
